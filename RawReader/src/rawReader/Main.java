@@ -26,7 +26,7 @@ public class Main extends JFrame{
         
         JFrame frame = new Main();
         frame.show();
-        //brandond
+        //brandond2
         File rawFile = new File(args[0]);
         ProcessRaw image;
         try {
