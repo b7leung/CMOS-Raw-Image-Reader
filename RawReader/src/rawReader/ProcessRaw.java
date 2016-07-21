@@ -12,7 +12,7 @@ public class ProcessRaw {
     
     private final static int PIXEL_VALUE_SIZE = 4;
     
-    private int length;
+    private int height;
     private int width;
     private ArrayList<Integer> pixelData;
     
@@ -28,7 +28,7 @@ public class ProcessRaw {
             reader.read(byteWidth, 2, 2);
             reader.read(byteLength, 2, 2);
             this.width = byteArrayToInt(byteWidth);
-            this.length = byteArrayToInt(byteLength);
+            this.height= byteArrayToInt(byteLength);
 
         } catch (FileNotFoundException e) {
             System.err.println( "ERROR: File could not be opened." );
@@ -38,7 +38,7 @@ public class ProcessRaw {
     }
     
     public int getPixelValue(int x, int y) throws IOException{
-        reader.seek( this.length * y + x*2 + PIXEL_VALUE_SIZE );
+        reader.seek( this.height* y + x*2 + PIXEL_VALUE_SIZE );
         byte[] pixelBuffer = new byte[PIXEL_VALUE_SIZE];
         reader.read( pixelBuffer, 2, 2 );
         return byteArrayToInt(pixelBuffer);
@@ -49,8 +49,8 @@ public class ProcessRaw {
         return wrapped.getInt();
     }
     
-    public int getLength(){
-        return length;
+    public int getHeight(){
+        return height;
     }
     
     public int getWidth(){
