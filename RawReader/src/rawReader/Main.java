@@ -17,10 +17,13 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
 import java.awt.BorderLayout;
 import javax.swing.BoxLayout;
 import java.awt.GridLayout;
@@ -29,30 +32,28 @@ import java.awt.FlowLayout;
 
 public class Main extends JFrame implements ActionListener{
     
+    private static final String UNOPENED_FILE_ERROR = new String("A .raw file must be opened first, under File > Open.");
+    private static final String INVALID_FILE_ERROR = new String("Invalid .raw file.");
     private File rawFile;
     private int xPixel;
     private int yPixel;
-    private JButton findButton;
-    private JTextField xText;
-    private JTextField yText;
     private ProcessRaw image;
     private JMenuBar menuBar;
     private JMenu fileMenu;
-    private JMenuItem openMenuItem;
+    private JMenuItem openSubmenu;
     private boolean fileChosen = false;
-    private JLabel lblFileName;
-    private JLabel lblHeight;
-    private JLabel lblWidth;
-    private JLabel lblPixelValue;
-    private JPanel panel_1;
-    private JButton btnChange;
-    private JMenuItem mntmSave;
-    private JMenu mnMode;
-    private JMenuItem mntmRegionOfInterest;
-    private JMenuItem mntmPixelValueEditor;
+    private JLabel FileNameLabel;
+    private JLabel HeightLabel;
+    private JLabel WidthLabel;
+    private JMenuItem saveAsSubmenu;
+    private JMenu toolsMenu;
+    private JMenuItem regionOfInterestSubmenu;
+    private JMenuItem pixelValueEditorSubmenu;
+    private JFrame frame;
 
     public Main(){
-        
+       
+        // setting up GUI window
         try {
             UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName());
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e1) {
@@ -61,135 +62,110 @@ public class Main extends JFrame implements ActionListener{
             System.exit( 1 );
         }
         
-        JFrame frame = new JFrame(".raw Reader");
+        frame = new JFrame(".raw Reader");
         frame.setSize( 548,370);
         frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
         
-        menuBar = new JMenuBar();
-        
+        // configuring menu bar elements
+        menuBar = new JMenuBar();      
         fileMenu = new JMenu("File");
         fileMenu.setMnemonic( KeyEvent.VK_F );
         menuBar.add( fileMenu );
         
-        openMenuItem = new JMenuItem("Open");
-        openMenuItem.addActionListener( this );
-        fileMenu.add( openMenuItem );
+        openSubmenu = new JMenuItem("Open");
+        openSubmenu.addActionListener( this );
+        fileMenu.add( openSubmenu );
         
-        mntmSave = new JMenuItem("Save As Bitmap");
-        fileMenu.add(mntmSave);
+        saveAsSubmenu = new JMenuItem("Save As Bitmap");
+        fileMenu.add(saveAsSubmenu);
+        saveAsSubmenu.addActionListener( this );
         
         frame.setJMenuBar( menuBar );
         
-        mnMode = new JMenu("Tools");
-        menuBar.add(mnMode);
+        toolsMenu = new JMenu("Tools");
+        menuBar.add(toolsMenu);
         
-        mntmRegionOfInterest = new JMenuItem("Calculate Mean of Region");
-        mnMode.add(mntmRegionOfInterest);
+        regionOfInterestSubmenu = new JMenuItem("Calculate Mean of Region");
+        toolsMenu.add(regionOfInterestSubmenu);
+        regionOfInterestSubmenu.addActionListener( this );
         
-        mntmPixelValueEditor = new JMenuItem("Pixel Value Editor");
-        mnMode.add(mntmPixelValueEditor);
+        pixelValueEditorSubmenu = new JMenuItem("Pixel Value Editor");
+        toolsMenu.add(pixelValueEditorSubmenu);
         frame.getContentPane().setLayout(new BorderLayout(0, 0));
-        mntmPixelValueEditor.addActionListener( this );
+        pixelValueEditorSubmenu.addActionListener( this );
         
-        JPanel panel_2 = new JPanel();
-        frame.getContentPane().add(panel_2, BorderLayout.NORTH);
-        panel_2.setLayout(new GridLayout(0, 1, 0, 0));
+        // creating initial GUI graphic elements
+        JPanel imageInfoPane = new JPanel();
+        frame.getContentPane().add(imageInfoPane, BorderLayout.NORTH);
+        imageInfoPane.setLayout(new GridLayout(0, 1, 0, 0));
         
-        lblFileName = new JLabel("File Name:");
-        panel_2.add(lblFileName);
+        FileNameLabel = new JLabel("File Name:");
+        imageInfoPane.add(FileNameLabel);
         
-        lblHeight = new JLabel("Height: ");
-        panel_2.add(lblHeight);
+        HeightLabel = new JLabel("Height: ");
+        imageInfoPane.add(HeightLabel);
         
-        lblWidth = new JLabel("Width:");
-        panel_2.add(lblWidth);
-        JPanel panel = new JPanel();
-        frame.getContentPane().add(panel, BorderLayout.CENTER);
-        panel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
-        
-        JLabel xLabel = new JLabel("x");
-        panel.add( xLabel );
-        
-        xText = new JTextField(5);
-        panel.add( xText );
-        
-        JLabel yLabel = new JLabel("y");
-        panel.add( yLabel );
-        
-        yText = new JTextField(5);
-        panel.add( yText );
-        
-        findButton = new JButton("Find");
-        findButton.addActionListener( this );
-        panel.add( findButton );
-        
-        panel_1 = new JPanel();
-        frame.getContentPane().add(panel_1, BorderLayout.SOUTH);
-        
-        lblPixelValue = new JLabel("Pixel Value:");
-        panel_1.add(lblPixelValue);
-        
-        btnChange = new JButton("Change");
-        panel_1.add(btnChange);
+        WidthLabel = new JLabel("Width:");
+        imageInfoPane.add(WidthLabel);
         
         frame.setVisible( true );
     }
     
     public void actionPerformed(ActionEvent e){
-        if( e.getSource() == openMenuItem ){
+        
+        // actions for selecting and opening .raw file
+        if( e.getSource() == openSubmenu ){
             JFileChooser fileChooser = new JFileChooser();
+            FileNameExtensionFilter filter = new FileNameExtensionFilter( "RAW files", "raw");
+            fileChooser.setFileFilter( filter );
             int fileOpenReturn = fileChooser.showOpenDialog(null);
             if(fileOpenReturn == JFileChooser.APPROVE_OPTION){
-                rawFile = fileChooser.getSelectedFile();
-                fileChosen = true;
-                try {
-                    image = new ProcessRaw( rawFile );
-                    lblFileName.setText( "File Name: " + rawFile.getName());
-                    lblHeight.setText( "Height: "+image.getHeight() + " pixels");
-                    lblWidth.setText( "Width: "+image.getWidth() + " pixels");
-                } catch (IOException error) {
-                    System.err.println( "File invalid" );
-                    // TODO Auto-generated catch block
-                    error.printStackTrace();
+                String filename = new String(fileChooser.getSelectedFile()+"");
+                try{
+                    String fileExtension = filename.substring( filename.lastIndexOf( "." ) +1); 
+                    if(fileExtension.equals("raw")){
+                        rawFile = fileChooser.getSelectedFile();
+                        fileChosen = true;
+                        image = new ProcessRaw( rawFile );
+                        FileNameLabel.setText( "File Name: " + rawFile.getName());
+                        HeightLabel.setText( "Height: "+image.getHeight() + " pixels");
+                        WidthLabel.setText( "Width: "+image.getWidth() + " pixels");
+                    }else{
+                        throw new IllegalArgumentException();
+                    }
+                }catch(Exception fileNameError){
+                    JOptionPane.showMessageDialog( frame, INVALID_FILE_ERROR,
+                    "Error", JOptionPane.PLAIN_MESSAGE);
                 }
             }
-        } else if(e.getSource() == findButton && fileChosen ){
-            
-                xPixel = Integer.parseInt( xText.getText() );
-                yPixel = Integer.parseInt(  yText.getText() );
-                boolean valid = true;
-                if(xPixel >= image.getWidth() ){
-                    System.out.println( "Error: " + xPixel + " is too big for the image width of " + image.getWidth() );
-                    valid = false;
-                }
-                if (xPixel < 0){
-                    System.out.println( "Error: pixel's x-coordinate cannot be negative" ); 
-                    valid = false;
-                }
-                if ( yPixel >= image.getWidth() ){
-                    System.out.println( "Error: " + yPixel + " is too big for the image height of " + image.getHeight() );
-                    valid = false;
-                }
-                if ( yPixel < 0 ){
-                    System.out.println( "Error: pixel's y-coordinate cannot be negative" ); 
-                    valid = false;
-                } 
-                if(valid){
-                    try {
-                        System.out.println( "The pixel data at ( " + xPixel + ", " + yPixel + " ) is "
-                        + image.getPixelValue( xPixel, yPixel ) );
-                    } catch (IOException e1) {
-                        System.err.println( "Pixel Data could not be read." );
-                    }
-                }
-        }else if (e.getSource() == mntmPixelValueEditor){
-            PixelValueEditor pixelEditFrame = new PixelValueEditor(image);
-            pixelEditFrame.make();
+        // actions for opening pixel value editor
+        } else if (e.getSource() == pixelValueEditorSubmenu){
+            if(fileChosen){
+                PixelValueEditor pixelEditFrame = new PixelValueEditor(image);
+                pixelEditFrame.make();
+            }else{
+                JOptionPane.showMessageDialog( frame, UNOPENED_FILE_ERROR,
+                "Error", JOptionPane.PLAIN_MESSAGE);
+            }
+        } else if (e.getSource() == regionOfInterestSubmenu){
+            if(fileChosen){
+                MeanOfRegion meanOfRegionFrame = new MeanOfRegion(image);
+                meanOfRegionFrame.make();
+            }else{
+                JOptionPane.showMessageDialog( frame, UNOPENED_FILE_ERROR,
+                "Error", JOptionPane.PLAIN_MESSAGE);
+            }
+        } else if (e.getSource() == saveAsSubmenu){
+            if(fileChosen){
+                
+            }else{
+                JOptionPane.showMessageDialog( frame, UNOPENED_FILE_ERROR,
+                "Error", JOptionPane.PLAIN_MESSAGE);
+            }
         }
     }
     
     public static void main(String args[]){
-        
         Main gui = new Main();
     }
 }
