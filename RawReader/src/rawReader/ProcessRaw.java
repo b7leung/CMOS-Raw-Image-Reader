@@ -27,8 +27,19 @@ public class ProcessRaw {
             byte[] byteLength = new byte[PIXEL_VALUE_SIZE];
             reader.read(byteWidth, 2, 2);
             reader.read(byteLength, 2, 2);
-            this.width = byteArrayToInt(byteWidth);
-            this.height= byteArrayToInt(byteLength);
+            /*
+            for(int i = 0; i< byteWidth.length; i++){
+            	Byte byt = new Byte(byteWidth[i]);
+            	System.out.print(byt.intValue() + " ");
+            }
+            System.out.println();
+            System.out.println(byteWidth);
+            System.out.println(reverseByteArray( byteWidth ) );
+            System.out.println(byteArrayToInt(byteWidth));
+            System.out.println(byteArrayToInt( reverseByteArray( byteWidth ) ));
+            */
+            this.width = byteArrayToInt( reverseByteArray( byteWidth ) );
+            this.height= byteArrayToInt( reverseByteArray( byteLength ) );
 
         } catch (FileNotFoundException e) {
             System.err.println( "ERROR: File could not be opened." );
@@ -41,7 +52,9 @@ public class ProcessRaw {
         reader.seek( this.height* y + x*2 + PIXEL_VALUE_SIZE );
         byte[] pixelBuffer = new byte[PIXEL_VALUE_SIZE];
         reader.read( pixelBuffer, 2, 2 );
-        return byteArrayToInt(pixelBuffer);
+        System.out.println(byteArrayToInt(pixelBuffer));
+        System.out.println(byteArrayToInt( reverseByteArray( pixelBuffer) ));
+        return byteArrayToInt( reverseByteArray( pixelBuffer) );
     }
     
     public void setPixelValue(int x, int y, int value){
@@ -56,12 +69,20 @@ public class ProcessRaw {
     }
     
     private int byteArrayToInt(byte[] byteArray){
-        ByteBuffer wrapped = ByteBuffer.wrap( byteArray );
+        ByteBuffer wrapped = ByteBuffer.wrap( byteArray ).order(java.nio.ByteOrder.BIG_ENDIAN);
         return wrapped.getInt();
     }
     
     private byte[] intToByteArray(int x){
         return ByteBuffer.allocate( PIXEL_VALUE_SIZE ).putInt( x ).array();
+    }
+    
+    private byte[] reverseByteArray(byte[] byteArray){
+    	byte[] reversedArray = new byte[byteArray.length];
+    	for(int i = 0; i < byteArray.length; i++){
+    		reversedArray[i] = byteArray[byteArray.length-1-i];
+    	}
+    	return reversedArray;
     }
     
     public int getHeight(){
