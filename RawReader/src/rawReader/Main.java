@@ -20,6 +20,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -29,6 +30,10 @@ import javax.swing.BoxLayout;
 import java.awt.GridLayout;
 import javax.swing.SwingConstants;
 import java.awt.FlowLayout;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import java.awt.Font;
 
 public class Main extends JFrame implements ActionListener{
     
@@ -50,6 +55,15 @@ public class Main extends JFrame implements ActionListener{
     private JMenuItem regionOfInterestSubmenu;
     private JMenuItem pixelValueEditorSubmenu;
     private JFrame frame;
+    private JPanel historyPanel;
+    private JMenu mnEdit;
+    private JMenuItem mntmFlip;
+    private JMenuItem mntmRotateLeft;
+    private JMenuItem mntmFlipVertically;
+    private JMenuItem mntmFlipHorizontally;
+    private static JTextArea txtrHello;
+    private JPanel historyLabelPanel;
+    private JLabel historyLabel;
 
     public Main(){
        
@@ -83,6 +97,7 @@ public class Main extends JFrame implements ActionListener{
         frame.setJMenuBar( menuBar );
         
         toolsMenu = new JMenu("Tools");
+        toolsMenu.setMnemonic('T');
         menuBar.add(toolsMenu);
         
         regionOfInterestSubmenu = new JMenuItem("Calculate Mean of Region");
@@ -91,6 +106,22 @@ public class Main extends JFrame implements ActionListener{
         
         pixelValueEditorSubmenu = new JMenuItem("Pixel Value Editor");
         toolsMenu.add(pixelValueEditorSubmenu);
+        
+        mnEdit = new JMenu("Edit");
+        mnEdit.setMnemonic('E');
+        menuBar.add(mnEdit);
+        
+        mntmFlip = new JMenuItem("Rotate Right");
+        mnEdit.add(mntmFlip);
+        
+        mntmRotateLeft = new JMenuItem("Rotate Left");
+        mnEdit.add(mntmRotateLeft);
+        
+        mntmFlipHorizontally = new JMenuItem("Flip Horizontally");
+        mnEdit.add(mntmFlipHorizontally);
+        
+        mntmFlipVertically = new JMenuItem("Flip Vertically");
+        mnEdit.add(mntmFlipVertically);
         frame.getContentPane().setLayout(new BorderLayout(0, 0));
         pixelValueEditorSubmenu.addActionListener( this );
         
@@ -100,14 +131,35 @@ public class Main extends JFrame implements ActionListener{
         imageInfoPane.setLayout(new GridLayout(0, 1, 0, 0));
         
         FileNameLabel = new JLabel("File Name:");
+        FileNameLabel.setFont(new Font("Tahoma", Font.PLAIN, 16));
         imageInfoPane.add(FileNameLabel);
         
         HeightLabel = new JLabel("Height: ");
+        HeightLabel.setFont(new Font("Tahoma", Font.PLAIN, 16));
         imageInfoPane.add(HeightLabel);
         
         WidthLabel = new JLabel("Width:");
+        WidthLabel.setFont(new Font("Tahoma", Font.PLAIN, 16));
         imageInfoPane.add(WidthLabel);
         
+        historyPanel = new JPanel();
+        frame.getContentPane().add(historyPanel, BorderLayout.SOUTH);
+        
+        txtrHello = new JTextArea(10, 60);
+        txtrHello.setLineWrap(true);
+        txtrHello.setEditable(false);
+        JScrollPane scroll = new JScrollPane(txtrHello);
+        scroll.setVerticalScrollBarPolicy( ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS );
+        
+        historyPanel.add(scroll);
+        
+        historyLabelPanel = new JPanel();
+        frame.getContentPane().add(historyLabelPanel, BorderLayout.CENTER);
+        
+        historyLabel = new JLabel("Edit History:");
+        historyLabelPanel.add(historyLabel);
+        
+        frame.pack();
         frame.setVisible( true );
     }
     
@@ -167,6 +219,9 @@ public class Main extends JFrame implements ActionListener{
     
     public static void main(String args[]){
         Main gui = new Main();
+    }
+    public static void editHistory(String text){
+       txtrHello.append(text); 
     }
 }
 

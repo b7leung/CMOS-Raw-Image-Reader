@@ -21,7 +21,7 @@ public class ProcessRaw {
     // open image, find length & width, and fill pixel data array.
     public ProcessRaw(File image) throws IOException{
         try {
-            reader = new RandomAccessFile(image, "r");
+            reader = new RandomAccessFile(image, "rw");
             
             byte[] byteWidth = new byte[PIXEL_VALUE_SIZE];
             byte[] byteLength = new byte[PIXEL_VALUE_SIZE];
@@ -44,9 +44,24 @@ public class ProcessRaw {
         return byteArrayToInt(pixelBuffer);
     }
     
+    public void setPixelValue(int x, int y, int value){
+        try {
+            reader.seek( this.height* y + x*2 + PIXEL_VALUE_SIZE );
+            byte[] newPixelValue = intToByteArray(value);
+            reader.write( newPixelValue, 2, 2 );
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } 
+    }
+    
     private int byteArrayToInt(byte[] byteArray){
         ByteBuffer wrapped = ByteBuffer.wrap( byteArray );
         return wrapped.getInt();
+    }
+    
+    private byte[] intToByteArray(int x){
+        return ByteBuffer.allocate( PIXEL_VALUE_SIZE ).putInt( x ).array();
     }
     
     public int getHeight(){

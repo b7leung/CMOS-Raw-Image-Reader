@@ -6,6 +6,7 @@ import javax.swing.JPanel;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 
 import javax.swing.JLabel;
 import javax.swing.JTextField;
@@ -22,11 +23,15 @@ public class MeanOfRegion implements ActionListener{
     private JTextField lowerRightYField;
     private JButton findMeanButton;
     private ProcessRaw image;
+    private JLabel meanResultLabel;
     
     public MeanOfRegion(ProcessRaw image){
         this.image = image;
     }
     
+    /**
+     * @wbp.parser.entryPoint
+     */
     public void make(){
         
         // initalizing gui window
@@ -93,10 +98,12 @@ public class MeanOfRegion implements ActionListener{
         JPanel meanResultPanel = new JPanel();
         panel.add(meanResultPanel);
         
-        JLabel meanResultLabel = new JLabel("Mean Of Region: ");
+        meanResultLabel = new JLabel("Mean Of Region: ");
+        meanResultLabel.setHorizontalAlignment(SwingConstants.CENTER);
         meanResultLabel.setFont(new Font("Tahoma", Font.BOLD | Font.ITALIC, 16));
         meanResultPanel.add(meanResultLabel);
         
+        MeanOfRegionFrame.pack();
         MeanOfRegionFrame.setVisible( true );
 
         
@@ -104,7 +111,26 @@ public class MeanOfRegion implements ActionListener{
     @Override
     public void actionPerformed(ActionEvent e) {
         if(e.getSource() == findMeanButton){
-            System.out.println( upperLeftXField.getText() );
+            int upperLeftX = Integer.parseInt( upperLeftXField.getText() );
+            int upperLeftY = Integer.parseInt( upperLeftYField.getText() );
+            int lowerRightX = Integer.parseInt( lowerRightXField.getText() );
+            int lowerRightY = Integer.parseInt( lowerRightYField.getText() );
+            int sum = 0;
+            int pixelAmt = 0;
+            for(int l = upperLeftY; l <= lowerRightY; l++){
+                for(int w = upperLeftX; w<=lowerRightX; w++){
+                    try {
+                        sum = sum + image.getPixelValue( w, l );
+                        //System.out.println( "NOW CALCULATING PIXEL AT X = "+ w + " Y = " + l + ". VALUE IS: " + image.getPixelValue( w, l ));
+                        pixelAmt++;
+                        //System.out.println( "SUM " + sum );
+                    } catch (IOException e1) {
+                        // TODO Auto-generated catch block
+                        e1.printStackTrace();
+                    }
+                }
+            }
+            meanResultLabel.setText( "Mean of Region: " + (sum/pixelAmt) );
         }
         
     }

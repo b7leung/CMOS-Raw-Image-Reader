@@ -12,6 +12,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.JButton;
+import javax.swing.JFormattedTextField;
 
 public class PixelValueEditor implements ActionListener{
 
@@ -24,6 +25,7 @@ public class PixelValueEditor implements ActionListener{
     private ProcessRaw image;
     private JLabel PixelValueLabel;
     private JFrame PixelValueEditorFrame;
+    private JTextField pixelValueField;
     
     public PixelValueEditor(ProcessRaw image){
         this.image = image;
@@ -66,9 +68,15 @@ public class PixelValueEditor implements ActionListener{
         PixelValueLabel = new JLabel("Pixel Value: ");
         infoPanel.add(PixelValueLabel);
         
+        pixelValueField = new JTextField();
+        infoPanel.add(pixelValueField);
+        pixelValueField.setColumns(10);
+        
         changeButton = new JButton("Change");
         infoPanel.add(changeButton);
-
+        changeButton.addActionListener( this );
+        
+        PixelValueEditorFrame.pack();
         PixelValueEditorFrame.setVisible( true );
     }
 
@@ -107,11 +115,25 @@ public class PixelValueEditor implements ActionListener{
             }
             if(valid){
                 try {
-                    PixelValueLabel.setText( "Pixel Value: "+image.getPixelValue( xPixel, yPixel ) );
+                    pixelValueField.setText( "" + image.getPixelValue( xPixel, yPixel ) );
                 } catch (IOException e1) {
                     System.err.println( "Pixel Data could not be read." );
                 }
             }
+        }else if (e.getSource() == changeButton){
+            try {
+                xPixel = Integer.parseInt( xTextField.getText() );
+                yPixel = Integer.parseInt(  yTextField.getText() );
+                int oldValue=0;
+                oldValue = image.getPixelValue( xPixel, yPixel );
+                int newValue = Integer.parseInt( pixelValueField.getText());
+                image.setPixelValue( xPixel, yPixel, newValue );
+                Main.editHistory( "Changed pixel value at ( " + xPixel + ", "+ yPixel + " )"+ " from "+oldValue + " to " + newValue +".\n" );
+            } catch (IOException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
+            
         }
         
         
