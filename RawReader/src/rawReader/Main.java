@@ -9,6 +9,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -37,36 +38,48 @@ import java.awt.Font;
 
 public class Main extends JFrame implements ActionListener{
     
+	// constant string messages
     private static final String UNOPENED_FILE_ERROR = new String("A .raw file must be opened first, under File > Open.");
-    private static final String INVALID_FILE_ERROR = new String("Invalid .raw file.");
+    private static final String INVALID_FILE_ERROR = new String("Invalid .raw file. "
+    		+ "Check that file is a .raw file, permissions to read/write are granted, and that no other processes are accessing the file.");
+    private static final String TRANSFORMATION_ERROR = new String("Could not perform requested transformation.");
+    
+    // elements relating to the image chosen
     private File rawFile;
     private int xPixel;
     private int yPixel;
     private ProcessRaw image;
-    private JMenuBar menuBar;
-    private JMenu fileMenu;
-    private JMenuItem openSubmenu;
     private boolean fileChosen = false;
-    private JLabel FileNameLabel;
-    private JLabel HeightLabel;
-    private JLabel WidthLabel;
-    private JMenuItem saveAsSubmenu;
-    private JMenu toolsMenu;
-    private JMenuItem regionOfInterestSubmenu;
-    private JMenuItem pixelValueEditorSubmenu;
-    private JFrame frame;
-    private JPanel historyPanel;
-    private JMenu mnEdit;
-    private JMenuItem mntmFlip;
-    private JMenuItem mntmRotateLeft;
-    private JMenuItem mntmFlipVertically;
-    private JMenuItem mntmFlipHorizontally;
-    private static JTextArea txtrHello;
-    private JPanel historyLabelPanel;
-    private JLabel historyLabel;
+    private EditPictureUtils imageEditor;
+    private static String filename;
+
+    // Menu Bar elements
+    private final JMenuBar menuBar;
+    private final JMenu fileMenu;
+    private final JMenuItem openSubmenu;
+    private final JMenuItem saveAsSubmenu;
+    private final JMenu toolsMenu;
+    private final JMenuItem regionOfInterestSubmenu;
+    private final JMenuItem pixelValueEditorSubmenu;
+    private final JMenuItem rotateRightSubmenu;
+    private final JMenuItem rotateLeftSubmenu;
+    private final JMenuItem flipVerticallySubmenu;
+    private final JMenuItem flipHorizontallySubmenu;
+    private final JMenu editMenu;
+    private ArrayList<JMenuItem> fileDependent = new ArrayList<JMenuItem>();
+    
+    // GUI Elements
+    private final JFrame frame;
+    private final JLabel FileNameLabel;
+    private final JLabel HeightLabel;
+    private final JLabel WidthLabel;
+    private final JLabel historyLabel;
+    private final JPanel historyPanel;
+    private static JTextArea historyTextArea;
+    private final JPanel historyLabelPanel;
 
     public Main(){
-       
+    	
         // setting up GUI window
         try {
             UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName());
@@ -83,7 +96,6 @@ public class Main extends JFrame implements ActionListener{
         // configuring menu bar elements
         menuBar = new JMenuBar();      
         fileMenu = new JMenu("File");
-        fileMenu.setMnemonic( KeyEvent.VK_F );
         menuBar.add( fileMenu );
         
         openSubmenu = new JMenuItem("Open");
@@ -91,37 +103,54 @@ public class Main extends JFrame implements ActionListener{
         fileMenu.add( openSubmenu );
         
         saveAsSubmenu = new JMenuItem("Save As Bitmap");
+        saveAsSubmenu.setEnabled(false);
+        fileDependent.add(saveAsSubmenu);
         fileMenu.add(saveAsSubmenu);
         saveAsSubmenu.addActionListener( this );
         
         frame.setJMenuBar( menuBar );
         
         toolsMenu = new JMenu("Tools");
-        toolsMenu.setMnemonic('T');
         menuBar.add(toolsMenu);
         
         regionOfInterestSubmenu = new JMenuItem("Calculate Mean of Region");
+        regionOfInterestSubmenu.setEnabled(false);
+        fileDependent.add(regionOfInterestSubmenu);
         toolsMenu.add(regionOfInterestSubmenu);
         regionOfInterestSubmenu.addActionListener( this );
         
         pixelValueEditorSubmenu = new JMenuItem("Pixel Value Editor");
+        pixelValueEditorSubmenu.setEnabled(false);
+        fileDependent.add(pixelValueEditorSubmenu);
         toolsMenu.add(pixelValueEditorSubmenu);
         
-        mnEdit = new JMenu("Edit");
-        mnEdit.setMnemonic('E');
-        menuBar.add(mnEdit);
+        editMenu = new JMenu("Edit");
+        menuBar.add(editMenu);
         
-        mntmFlip = new JMenuItem("Rotate Right");
-        mnEdit.add(mntmFlip);
+        rotateRightSubmenu = new JMenuItem("Rotate Right");
+        rotateRightSubmenu.setEnabled(false);
+        fileDependent.add(rotateRightSubmenu);
+        editMenu.add(rotateRightSubmenu);
+        rotateRightSubmenu.addActionListener(this);
         
-        mntmRotateLeft = new JMenuItem("Rotate Left");
-        mnEdit.add(mntmRotateLeft);
+        rotateLeftSubmenu = new JMenuItem("Rotate Left");
+        rotateLeftSubmenu.setEnabled(false);
+        fileDependent.add(rotateLeftSubmenu);
+        editMenu.add(rotateLeftSubmenu);
+        rotateLeftSubmenu.addActionListener(this);
         
-        mntmFlipHorizontally = new JMenuItem("Flip Horizontally");
-        mnEdit.add(mntmFlipHorizontally);
+        flipHorizontallySubmenu = new JMenuItem("Flip Horizontally");
+        flipHorizontallySubmenu.setEnabled(false);
+        fileDependent.add(flipHorizontallySubmenu);
+        editMenu.add(flipHorizontallySubmenu);
+        flipHorizontallySubmenu.addActionListener(this);
         
-        mntmFlipVertically = new JMenuItem("Flip Vertically");
-        mnEdit.add(mntmFlipVertically);
+        flipVerticallySubmenu = new JMenuItem("Flip Vertically");
+        flipVerticallySubmenu.setEnabled(false);
+        fileDependent.add(flipVerticallySubmenu);
+        editMenu.add(flipVerticallySubmenu);
+        flipVerticallySubmenu.addActionListener(this);
+        
         frame.getContentPane().setLayout(new BorderLayout(0, 0));
         pixelValueEditorSubmenu.addActionListener( this );
         
@@ -145,10 +174,11 @@ public class Main extends JFrame implements ActionListener{
         historyPanel = new JPanel();
         frame.getContentPane().add(historyPanel, BorderLayout.SOUTH);
         
-        txtrHello = new JTextArea(10, 60);
-        txtrHello.setLineWrap(true);
-        txtrHello.setEditable(false);
-        JScrollPane scroll = new JScrollPane(txtrHello);
+        historyTextArea = new JTextArea(10, 60);
+        historyTextArea.setLineWrap(false);
+        historyTextArea.setEditable(false);
+        JScrollPane scroll = new JScrollPane(historyTextArea);
+        scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
         scroll.setVerticalScrollBarPolicy( ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS );
         
         historyPanel.add(scroll);
@@ -156,7 +186,7 @@ public class Main extends JFrame implements ActionListener{
         historyLabelPanel = new JPanel();
         frame.getContentPane().add(historyLabelPanel, BorderLayout.CENTER);
         
-        historyLabel = new JLabel("Edit History:");
+        historyLabel = new JLabel("History:");
         historyLabelPanel.add(historyLabel);
         
         frame.pack();
@@ -167,21 +197,33 @@ public class Main extends JFrame implements ActionListener{
         
         // actions for selecting and opening .raw file
         if( e.getSource() == openSubmenu ){
+        	
+        	// opening file browser
             JFileChooser fileChooser = new JFileChooser();
             FileNameExtensionFilter filter = new FileNameExtensionFilter( "RAW files", "raw");
             fileChooser.setFileFilter( filter );
             int fileOpenReturn = fileChooser.showOpenDialog(null);
+            
+            // checking if file chosen was a valid .raw file
             if(fileOpenReturn == JFileChooser.APPROVE_OPTION){
-                String filename = new String(fileChooser.getSelectedFile()+"");
+                String filenameBuffer = new String(fileChooser.getSelectedFile()+"");
                 try{
-                    String fileExtension = filename.substring( filename.lastIndexOf( "." ) +1); 
+                    String fileExtension = filenameBuffer.substring( filenameBuffer.lastIndexOf( "." ) +1); 
                     if(fileExtension.equals("raw")){
+                    	
+                    	// if the file is valid, then name/height/width values are initialized
                         rawFile = fileChooser.getSelectedFile();
                         fileChosen = true;
                         image = new ProcessRaw( rawFile );
+                        filename = new String(rawFile.getName());
                         FileNameLabel.setText( "File Name: " + rawFile.getName());
                         HeightLabel.setText( "Height: "+image.getHeight() + " pixels");
                         WidthLabel.setText( "Width: "+image.getWidth() + " pixels");
+                        for(int i = 0; i < fileDependent.size(); i++){
+                        	fileDependent.get(i).setEnabled(true);
+                        }
+                        imageEditor = new EditPictureUtils(image);
+                        editHistory("Added image.");
                     }else{
                         throw new IllegalArgumentException();
                     }
@@ -192,37 +234,48 @@ public class Main extends JFrame implements ActionListener{
             }
         // actions for opening pixel value editor
         } else if (e.getSource() == pixelValueEditorSubmenu){
-            if(fileChosen){
+        	
                 PixelValueEditor pixelEditFrame = new PixelValueEditor(image);
                 pixelEditFrame.make();
-            }else{
-                JOptionPane.showMessageDialog( frame, UNOPENED_FILE_ERROR,
-                "Error", JOptionPane.PLAIN_MESSAGE);
-            }
+                
         } else if (e.getSource() == regionOfInterestSubmenu){
-            if(fileChosen){
+        	
                 MeanOfRegion meanOfRegionFrame = new MeanOfRegion(image);
                 meanOfRegionFrame.make();
-            }else{
-                JOptionPane.showMessageDialog( frame, UNOPENED_FILE_ERROR,
-                "Error", JOptionPane.PLAIN_MESSAGE);
-            }
-        } else if (e.getSource() == saveAsSubmenu){
-            if(fileChosen){
                 
-            }else{
-                JOptionPane.showMessageDialog( frame, UNOPENED_FILE_ERROR,
+        } else if (e.getSource() == saveAsSubmenu){
+
+        } else if (e.getSource() == rotateRightSubmenu){
+        	
+        	image = imageEditor.rotateRight();
+        	
+        } else if (e.getSource() == rotateLeftSubmenu){
+        	
+        	image = imageEditor.rotateLeft();
+        	
+        } else if (e.getSource() == flipHorizontallySubmenu){
+        	
+        	image = imageEditor.flipHorizontally();
+        	
+        } else if (e.getSource() == flipVerticallySubmenu){
+        	
+        	try{
+        		image = imageEditor.flipVertically();
+        	}catch(Exception exception){
+                JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR,
                 "Error", JOptionPane.PLAIN_MESSAGE);
-            }
-        }
+        	}
+        } 
     }
     
     public static void main(String args[]){
         Main gui = new Main();
     }
+    
     public static void editHistory(String text){
-       txtrHello.append(text); 
+       historyTextArea.append(filename + " -- "+text+"\n"); 
     }
+
 }
 
 

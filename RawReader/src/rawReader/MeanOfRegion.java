@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.JButton;
@@ -110,27 +111,45 @@ public class MeanOfRegion implements ActionListener{
     }
     @Override
     public void actionPerformed(ActionEvent e) {
+    	
         if(e.getSource() == findMeanButton){
-            int upperLeftX = Integer.parseInt( upperLeftXField.getText() );
-            int upperLeftY = Integer.parseInt( upperLeftYField.getText() );
-            int lowerRightX = Integer.parseInt( lowerRightXField.getText() );
-            int lowerRightY = Integer.parseInt( lowerRightYField.getText() );
-            int sum = 0;
-            int pixelAmt = 0;
-            for(int l = upperLeftY; l <= lowerRightY; l++){
-                for(int w = upperLeftX; w<=lowerRightX; w++){
-                    try {
-                        sum = sum + image.getPixelValue( w, l );
-                        //System.out.println( "NOW CALCULATING PIXEL AT X = "+ w + " Y = " + l + ". VALUE IS: " + image.getPixelValue( w, l ));
-                        pixelAmt++;
-                        //System.out.println( "SUM " + sum );
-                    } catch (IOException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
-                    }
-                }
-            }
-            meanResultLabel.setText( "Mean of Region: " + (sum/pixelAmt) );
+        	PixelFieldChecker upperLeftXCheck = new PixelFieldChecker(upperLeftXField.getText(), image.getWidth(), PixelFieldChecker.WIDTH, MeanOfRegionFrame);
+        	PixelFieldChecker upperLeftYCheck = new PixelFieldChecker(upperLeftYField.getText(), image.getHeight(), PixelFieldChecker.HEIGHT, MeanOfRegionFrame);
+        	PixelFieldChecker lowerRightXCheck= new PixelFieldChecker(lowerRightXField.getText(), image.getWidth(), PixelFieldChecker.WIDTH, MeanOfRegionFrame);
+        	PixelFieldChecker lowerRightYCheck= new PixelFieldChecker(lowerRightYField.getText(), image.getHeight(), PixelFieldChecker.HEIGHT, MeanOfRegionFrame);
+        	boolean validUpperLeftX = upperLeftXCheck.verifyValid();
+        	boolean validUpperLeftY = upperLeftYCheck.verifyValid();
+        	boolean validLowerRightX = lowerRightXCheck.verifyValid();
+        	boolean validLowerRightY= lowerRightYCheck.verifyValid();
+        	
+        	if( validUpperLeftX && validUpperLeftY && validLowerRightX && validLowerRightY){
+        		
+				int upperLeftX = Integer.parseInt( upperLeftXField.getText() );
+				int upperLeftY = Integer.parseInt( upperLeftYField.getText() );
+				int lowerRightX = Integer.parseInt( lowerRightXField.getText() );
+				int lowerRightY = Integer.parseInt( lowerRightYField.getText() );
+				
+				if( upperLeftX > lowerRightX || upperLeftY > lowerRightY ){
+			        JOptionPane.showMessageDialog( MeanOfRegionFrame,
+			        "Cannot calculate; ensure upper left coordinates are less than lower right coordinates.", "Error", JOptionPane.PLAIN_MESSAGE);
+				}else{
+					int sum = 0;
+					int pixelAmt = 0;
+					for(int l = upperLeftY; l <= lowerRightY; l++){
+						for(int w = upperLeftX; w<=lowerRightX; w++){
+							try {
+								sum = sum + image.getPixelValue( w, l );
+								//System.out.println( "NOW CALCULATING PIXEL AT X = "+ w + " Y = " + l + ". VALUE IS: " + image.getPixelValue( w, l ));
+								pixelAmt++;
+							}catch (Exception e2) {
+								JOptionPane.showMessageDialog( MeanOfRegionFrame,
+								"Fatal issue encountered. Aborting.", "Error", JOptionPane.PLAIN_MESSAGE);
+							}
+						}
+					}
+					meanResultLabel.setText( "Mean of Region: " + (sum/pixelAmt) );
+				}
+        	}
         }
         
     }

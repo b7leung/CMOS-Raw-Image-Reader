@@ -26,18 +26,18 @@ public class PixelValueEditor implements ActionListener{
     private JLabel PixelValueLabel;
     private JFrame PixelValueEditorFrame;
     private JTextField pixelValueField;
+    private static final int MAX_PIXEL_INTENSITY = (int) Math.pow(2,10);
     
     public PixelValueEditor(ProcessRaw image){
         this.image = image;
     }
 
-    /**
-     * @wbp.parser.entryPoint
-     */
+    // Creates GUI elements for editor window 
+
     public void make(){
-        PixelValueEditorFrame = new JFrame("demo");
-        PixelValueEditorFrame.setTitle("Pixel Value Editor");
-        PixelValueEditorFrame.setSize( 548,370);
+    	
+        PixelValueEditorFrame = new JFrame("Pixel Value Editor");
+        PixelValueEditorFrame.setSize( 548,370 );
         PixelValueEditorFrame.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
         
         JPanel inputPanel = new JPanel();
@@ -61,7 +61,6 @@ public class PixelValueEditor implements ActionListener{
         inputPanel.add(findButton);
         findButton.addActionListener( this );
         
-        
         JPanel infoPanel = new JPanel();
         PixelValueEditorFrame.getContentPane().add(infoPanel, BorderLayout.CENTER);
         
@@ -82,58 +81,50 @@ public class PixelValueEditor implements ActionListener{
 
     @Override
     public void actionPerformed(ActionEvent e) {
+    	
         if(e.getSource()==findButton){
-            if(xTextField.getText().equals( "" )){
-                
-            }
-            xPixel = Integer.parseInt( xTextField.getText() );
-            yPixel = Integer.parseInt(  yTextField.getText() );
-            boolean valid = true;
-            if(xPixel >= image.getWidth() ){
-                JOptionPane.showMessageDialog( PixelValueEditorFrame,
-                "Error: " + xPixel + " is too big for the image width of " + image.getWidth(),
-                "Error", JOptionPane.PLAIN_MESSAGE);
-                valid = false;
-            }
-            if (xPixel < 0){
-                JOptionPane.showMessageDialog( PixelValueEditorFrame,
-                "Error: pixel's x-coordinate cannot be negative",
-                "Error", JOptionPane.PLAIN_MESSAGE);
-                valid = false;
-            }
-            if ( yPixel >= image.getWidth() ){
-                JOptionPane.showMessageDialog( PixelValueEditorFrame,
-                "Error: " + yPixel + " is too big for the image height of " + image.getHeight(),
-                "Error", JOptionPane.PLAIN_MESSAGE);
-                valid = false;
-            }
-            if ( yPixel < 0 ){
-                JOptionPane.showMessageDialog( PixelValueEditorFrame,
-                "Error: pixel's y-coordinate cannot be negative",
-                "Error", JOptionPane.PLAIN_MESSAGE);
-                valid = false;
-            }
-            if(valid){
+        	
+        	// checking if x and y values fields are entered in correctly
+        	PixelFieldChecker pixelCheckX = new PixelFieldChecker(xTextField.getText(), image.getWidth()-1, PixelFieldChecker.WIDTH, PixelValueEditorFrame);
+        	PixelFieldChecker pixelCheckY = new PixelFieldChecker(yTextField.getText(), image.getHeight()-1, PixelFieldChecker.HEIGHT, PixelValueEditorFrame);
+        	boolean validX = pixelCheckX.verifyValid();
+        	boolean validY = pixelCheckY.verifyValid();
+
+        	if(validX&&validY){
                 try {
+                    xPixel = Integer.parseInt( xTextField.getText() );
+                    yPixel = Integer.parseInt(  yTextField.getText() );
                     pixelValueField.setText( "" + image.getPixelValue( xPixel, yPixel ) );
                 } catch (IOException e1) {
-                    System.err.println( "Pixel Data could not be read." );
+                    JOptionPane.showMessageDialog( PixelValueEditorFrame,
+                    "Pixel data could not be read." ,
+                    "Error", JOptionPane.PLAIN_MESSAGE);
                 }
-            }
+        	}
+        
         }else if (e.getSource() == changeButton){
-            try {
-                xPixel = Integer.parseInt( xTextField.getText() );
-                yPixel = Integer.parseInt(  yTextField.getText() );
-                int oldValue=0;
-                oldValue = image.getPixelValue( xPixel, yPixel );
-                int newValue = Integer.parseInt( pixelValueField.getText());
-                image.setPixelValue( xPixel, yPixel, newValue );
-                Main.editHistory( "Changed pixel value at ( " + xPixel + ", "+ yPixel + " )"+ " from "+oldValue + " to " + newValue +".\n" );
-            } catch (IOException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            }
-            
+        	
+        	PixelFieldChecker pixelCheckX = new PixelFieldChecker(xTextField.getText(), image.getWidth()-1, PixelFieldChecker.WIDTH, PixelValueEditorFrame);
+        	PixelFieldChecker pixelCheckY = new PixelFieldChecker(yTextField.getText(), image.getHeight()-1, PixelFieldChecker.HEIGHT, PixelValueEditorFrame);
+        	PixelFieldChecker pixelValueCheck = new PixelFieldChecker(pixelValueField.getText(), MAX_PIXEL_INTENSITY, PixelFieldChecker.PIXEL_VALUE, PixelValueEditorFrame);
+        	boolean validX = pixelCheckX.verifyValid();
+        	boolean validY = pixelCheckY.verifyValid();
+        	boolean validPixelValue = pixelValueCheck.verifyValid();
+        	
+        	if(validX && validY && validPixelValue){
+				try {
+					xPixel = Integer.parseInt( xTextField.getText() );
+					yPixel = Integer.parseInt( yTextField.getText() );
+					int oldValue=0;
+					oldValue = image.getPixelValue( xPixel, yPixel );
+					int newValue = Integer.parseInt( pixelValueField.getText());
+					image.setPixelValue( xPixel, yPixel, newValue );
+					Main.editHistory( "Changed pixel value at ( " + xPixel + ", "+ yPixel + " )"+ " from "+oldValue + " to " + newValue +"." );
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+            } 
         }
         
         
