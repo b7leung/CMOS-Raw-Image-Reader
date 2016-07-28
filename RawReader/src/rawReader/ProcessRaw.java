@@ -35,22 +35,31 @@ public class ProcessRaw {
         }
     }
     
+    public void setWidth(int x) throws IOException{
+        reader.seek( 0 );
+        byte[] newWidth = intToByteArray(x);
+        reader.write( newWidth, 2, 2 );
+        this.width = x;
+    }
+    
+    public void setHeight(int y) throws IOException{
+        reader.seek( 2 );
+        byte[] newHeight = intToByteArray(y);
+        reader.write( newHeight, 2, 2 );
+        this.height = y;
+    }
+    
     public int getPixelValue(int x, int y) throws IOException{
-        reader.seek( this.height* y + x*2 + PIXEL_BUFFER_SIZE );
+        reader.seek( (this.width* y *2) + x*2 + PIXEL_BUFFER_SIZE );
         byte[] pixelBuffer = new byte[PIXEL_BUFFER_SIZE];
         reader.read( pixelBuffer, 2, 2 );
         return byteArrayToInt( pixelBuffer );
     }
     
-    public void setPixelValue(int x, int y, int value){
-        try {
-            reader.seek( this.height* y + x*2 + PIXEL_BUFFER_SIZE );
+    public void setPixelValue(int x, int y, int value) throws IOException{
+            reader.seek( (this.width* y *2)+ x*2 + PIXEL_BUFFER_SIZE );
             byte[] newPixelValue = intToByteArray(value);
             reader.write( newPixelValue, 2, 2 );
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } 
     }
     
     private int byteArrayToInt(byte[] byteArray){
@@ -72,5 +81,7 @@ public class ProcessRaw {
     public int getWidth(){
         return width;
     }
+    
+
 
 }

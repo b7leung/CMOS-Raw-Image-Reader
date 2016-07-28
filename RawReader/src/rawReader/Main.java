@@ -247,15 +247,36 @@ public class Main extends JFrame implements ActionListener{
 
         } else if (e.getSource() == rotateRightSubmenu){
         	
-        	image = imageEditor.rotateRight();
+        	try {
+                image = imageEditor.rotateRight();
+                HeightLabel.setText( "Height: "+image.getHeight() + " pixels");
+                WidthLabel.setText( "Width: "+image.getWidth() + " pixels");
+            } catch (IOException e1) {
+                JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR,
+                "Error", JOptionPane.PLAIN_MESSAGE);
+
+            }
         	
         } else if (e.getSource() == rotateLeftSubmenu){
+            
+            try{
+                image = imageEditor.rotateLeft();
+                HeightLabel.setText( "Height: "+image.getHeight() + " pixels");
+                WidthLabel.setText( "Width: "+image.getWidth() + " pixels");
+            }catch(IOException e1){
+                JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR,
+                "Error", JOptionPane.PLAIN_MESSAGE);
+            }
         	
-        	image = imageEditor.rotateLeft();
         	
         } else if (e.getSource() == flipHorizontallySubmenu){
         	
-        	image = imageEditor.flipHorizontally();
+        	try {
+                image = imageEditor.flipHorizontally();
+            } catch (IOException e1) {
+                JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR,
+                "Error", JOptionPane.PLAIN_MESSAGE);
+            }
         	
         } else if (e.getSource() == flipVerticallySubmenu){
         	

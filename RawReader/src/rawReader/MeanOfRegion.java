@@ -112,7 +112,8 @@ public class MeanOfRegion implements ActionListener{
     @Override
     public void actionPerformed(ActionEvent e) {
     	
-        if(e.getSource() == findMeanButton){
+        if( e.getSource() == findMeanButton || e.getSource() == upperLeftXField || e.getSource() == upperLeftYField 
+        || e.getSource() == lowerRightXField || e.getSource() == lowerRightYField ){
         	PixelFieldChecker upperLeftXCheck = new PixelFieldChecker(upperLeftXField.getText(), image.getWidth(), PixelFieldChecker.WIDTH, MeanOfRegionFrame);
         	PixelFieldChecker upperLeftYCheck = new PixelFieldChecker(upperLeftYField.getText(), image.getHeight(), PixelFieldChecker.HEIGHT, MeanOfRegionFrame);
         	PixelFieldChecker lowerRightXCheck= new PixelFieldChecker(lowerRightXField.getText(), image.getWidth(), PixelFieldChecker.WIDTH, MeanOfRegionFrame);

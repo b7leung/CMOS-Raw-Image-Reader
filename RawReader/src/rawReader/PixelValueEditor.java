@@ -34,6 +34,9 @@ public class PixelValueEditor implements ActionListener{
 
     // Creates GUI elements for editor window 
 
+    /**
+     * @wbp.parser.entryPoint
+     */
     public void make(){
     	
         PixelValueEditorFrame = new JFrame("Pixel Value Editor");
@@ -49,6 +52,7 @@ public class PixelValueEditor implements ActionListener{
         xTextField = new JTextField();
         inputPanel.add(xTextField);
         xTextField.setColumns(10);
+        xTextField.addActionListener( this );
         
         JLabel yLabel = new JLabel("y:");
         inputPanel.add(yLabel);
@@ -56,6 +60,7 @@ public class PixelValueEditor implements ActionListener{
         yTextField = new JTextField();
         inputPanel.add(yTextField);
         yTextField.setColumns(10);
+        yTextField.addActionListener( this );
         
         findButton = new JButton("Find");
         inputPanel.add(findButton);
@@ -70,6 +75,7 @@ public class PixelValueEditor implements ActionListener{
         pixelValueField = new JTextField();
         infoPanel.add(pixelValueField);
         pixelValueField.setColumns(10);
+        pixelValueField.addActionListener( this );
         
         changeButton = new JButton("Change");
         infoPanel.add(changeButton);
@@ -82,7 +88,7 @@ public class PixelValueEditor implements ActionListener{
     @Override
     public void actionPerformed(ActionEvent e) {
     	
-        if(e.getSource()==findButton){
+        if(e.getSource()==findButton||e.getSource()==xTextField || e.getSource() == yTextField){
         	
         	// checking if x and y values fields are entered in correctly
         	PixelFieldChecker pixelCheckX = new PixelFieldChecker(xTextField.getText(), image.getWidth()-1, PixelFieldChecker.WIDTH, PixelValueEditorFrame);
@@ -102,7 +108,7 @@ public class PixelValueEditor implements ActionListener{
                 }
         	}
         
-        }else if (e.getSource() == changeButton){
+        }else if (e.getSource() == changeButton||e.getSource()==pixelValueField){
         	
         	PixelFieldChecker pixelCheckX = new PixelFieldChecker(xTextField.getText(), image.getWidth()-1, PixelFieldChecker.WIDTH, PixelValueEditorFrame);
         	PixelFieldChecker pixelCheckY = new PixelFieldChecker(yTextField.getText(), image.getHeight()-1, PixelFieldChecker.HEIGHT, PixelValueEditorFrame);
