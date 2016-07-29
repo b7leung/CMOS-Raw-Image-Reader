@@ -37,6 +37,7 @@ public class MeanOfRegion implements ActionListener{
         
         // initalizing gui window
         MeanOfRegionFrame = new JFrame("Mean Of Region Calculator");
+        MeanOfRegionFrame.setResizable(false);
         MeanOfRegionFrame.setTitle( "Mean Of Region Calculator");
         MeanOfRegionFrame.setSize( 548,370 );
         MeanOfRegionFrame.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
@@ -101,7 +102,7 @@ public class MeanOfRegion implements ActionListener{
         
         meanResultLabel = new JLabel("Mean Of Region: ");
         meanResultLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        meanResultLabel.setFont(new Font("Tahoma", Font.BOLD | Font.ITALIC, 16));
+        meanResultLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
         meanResultPanel.add(meanResultLabel);
         
         MeanOfRegionFrame.pack();

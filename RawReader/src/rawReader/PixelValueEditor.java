@@ -40,6 +40,7 @@ public class PixelValueEditor implements ActionListener{
     public void make(){
     	
         PixelValueEditorFrame = new JFrame("Pixel Value Editor");
+        PixelValueEditorFrame.setResizable(false);
         PixelValueEditorFrame.setSize( 548,370 );
         PixelValueEditorFrame.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
         

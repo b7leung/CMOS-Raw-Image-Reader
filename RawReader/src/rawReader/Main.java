@@ -5,6 +5,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,6 +29,8 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
+
 import javax.swing.BoxLayout;
 import java.awt.GridLayout;
 import javax.swing.SwingConstants;
@@ -35,8 +39,12 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import java.awt.Font;
+import javax.swing.KeyStroke;
+import java.awt.event.InputEvent;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JSeparator;
 
-public class Main extends JFrame implements ActionListener{
+public class Main extends JFrame implements ActionListener, PropertyChangeListener{
     
 	// constant string messages
     private static final String UNOPENED_FILE_ERROR = new String("A .raw file must be opened first, under File > Open.");
@@ -73,10 +81,14 @@ public class Main extends JFrame implements ActionListener{
     private final JLabel FileNameLabel;
     private final JLabel HeightLabel;
     private final JLabel WidthLabel;
-    private final JLabel historyLabel;
     private final JPanel historyPanel;
     private static JTextArea historyTextArea;
-    private final JPanel historyLabelPanel;
+    private JMenuItem undoSubmenu;
+    private JMenuItem redoSubmenu;
+    private JMenu viewMenu;
+    private JCheckBoxMenuItem verboseHistoryCheckbox;
+    private JLabel lblHistory;
+    private JSeparator separator;
 
     public Main(){
     	
@@ -96,13 +108,18 @@ public class Main extends JFrame implements ActionListener{
         // configuring menu bar elements
         menuBar = new JMenuBar();      
         fileMenu = new JMenu("File");
+        fileMenu.setMnemonic('f');
         menuBar.add( fileMenu );
         
         openSubmenu = new JMenuItem("Open");
+        openSubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_MASK));
+        openSubmenu.setMnemonic( 'o' );
         openSubmenu.addActionListener( this );
         fileMenu.add( openSubmenu );
         
         saveAsSubmenu = new JMenuItem("Save As Bitmap");
+        saveAsSubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK));
+        saveAsSubmenu.setMnemonic( 's' );
         saveAsSubmenu.setEnabled(false);
         fileDependent.add(saveAsSubmenu);
         fileMenu.add(saveAsSubmenu);
@@ -110,49 +127,86 @@ public class Main extends JFrame implements ActionListener{
         
         frame.setJMenuBar( menuBar );
         
-        toolsMenu = new JMenu("Tools");
-        menuBar.add(toolsMenu);
-        
-        regionOfInterestSubmenu = new JMenuItem("Calculate Mean of Region");
-        regionOfInterestSubmenu.setEnabled(false);
-        fileDependent.add(regionOfInterestSubmenu);
-        toolsMenu.add(regionOfInterestSubmenu);
-        regionOfInterestSubmenu.addActionListener( this );
-        
-        pixelValueEditorSubmenu = new JMenuItem("Pixel Value Editor");
-        pixelValueEditorSubmenu.setEnabled(false);
-        fileDependent.add(pixelValueEditorSubmenu);
-        toolsMenu.add(pixelValueEditorSubmenu);
-        
         editMenu = new JMenu("Edit");
+        editMenu.setMnemonic('e');
         menuBar.add(editMenu);
         
+        undoSubmenu = new JMenuItem("Undo");
+        undoSubmenu.setEnabled(false);
+        undoSubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_MASK));
+        editMenu.add(undoSubmenu);
+        
+        redoSubmenu = new JMenuItem("Redo");
+        redoSubmenu.setEnabled(false);
+        redoSubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_MASK));
+        editMenu.add(redoSubmenu);
+        
+        separator = new JSeparator();
+        editMenu.add(separator);
+        
         rotateRightSubmenu = new JMenuItem("Rotate Right");
+        rotateRightSubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, InputEvent.CTRL_MASK));
+        rotateRightSubmenu.setMnemonic( 'r' );
         rotateRightSubmenu.setEnabled(false);
         fileDependent.add(rotateRightSubmenu);
         editMenu.add(rotateRightSubmenu);
         rotateRightSubmenu.addActionListener(this);
         
         rotateLeftSubmenu = new JMenuItem("Rotate Left");
+        rotateLeftSubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.CTRL_MASK));
+        rotateLeftSubmenu.setMnemonic( 'l' );
         rotateLeftSubmenu.setEnabled(false);
         fileDependent.add(rotateLeftSubmenu);
         editMenu.add(rotateLeftSubmenu);
         rotateLeftSubmenu.addActionListener(this);
         
         flipHorizontallySubmenu = new JMenuItem("Flip Horizontally");
+        flipHorizontallySubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, InputEvent.CTRL_MASK));
+        flipHorizontallySubmenu.setMnemonic( 'h' );
         flipHorizontallySubmenu.setEnabled(false);
         fileDependent.add(flipHorizontallySubmenu);
         editMenu.add(flipHorizontallySubmenu);
         flipHorizontallySubmenu.addActionListener(this);
         
         flipVerticallySubmenu = new JMenuItem("Flip Vertically");
+        flipVerticallySubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK));
+        flipVerticallySubmenu.setMnemonic( 'v' );
         flipVerticallySubmenu.setEnabled(false);
         fileDependent.add(flipVerticallySubmenu);
         editMenu.add(flipVerticallySubmenu);
+        
+        viewMenu = new JMenu("View");
+        viewMenu.setMnemonic('v');
+        menuBar.add(viewMenu);
+        
+        verboseHistoryCheckbox = new JCheckBoxMenuItem("Verbose History");
+        verboseHistoryCheckbox.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.ALT_MASK));
+        verboseHistoryCheckbox.setMnemonic( 'v' );
+        verboseHistoryCheckbox.setToolTipText( "Verbose mode records all actions. Regular mode records only file changes." );
+        viewMenu.add(verboseHistoryCheckbox);
+        
+        toolsMenu = new JMenu("Tools");
+        toolsMenu.setMnemonic('t');
+        menuBar.add(toolsMenu);
+        
+        regionOfInterestSubmenu = new JMenuItem("Calculate Mean of Region");
+        regionOfInterestSubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, InputEvent.CTRL_MASK));
+        regionOfInterestSubmenu.setMnemonic( 'm' );
+        regionOfInterestSubmenu.setEnabled(false);
+        fileDependent.add(regionOfInterestSubmenu);
+        toolsMenu.add(regionOfInterestSubmenu);
+        regionOfInterestSubmenu.addActionListener( this );
+        
+        pixelValueEditorSubmenu = new JMenuItem("Pixel Value Editor");
+        pixelValueEditorSubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_MASK));
+        pixelValueEditorSubmenu.setMnemonic( 'e' );
+        pixelValueEditorSubmenu.setEnabled(false);
+        fileDependent.add(pixelValueEditorSubmenu);
+        toolsMenu.add(pixelValueEditorSubmenu);
+        pixelValueEditorSubmenu.addActionListener( this );
         flipVerticallySubmenu.addActionListener(this);
         
         frame.getContentPane().setLayout(new BorderLayout(0, 0));
-        pixelValueEditorSubmenu.addActionListener( this );
         
         // creating initial GUI graphic elements
         JPanel imageInfoPane = new JPanel();
@@ -171,8 +225,13 @@ public class Main extends JFrame implements ActionListener{
         WidthLabel.setFont(new Font("Tahoma", Font.PLAIN, 16));
         imageInfoPane.add(WidthLabel);
         
+        lblHistory = new JLabel("History:");
+        lblHistory.setHorizontalAlignment(SwingConstants.CENTER);
+        imageInfoPane.add(lblHistory);
+        
         historyPanel = new JPanel();
-        frame.getContentPane().add(historyPanel, BorderLayout.SOUTH);
+        frame.getContentPane().add(historyPanel, BorderLayout.CENTER);
+        historyPanel.setLayout(new BorderLayout(0, 0));
         
         historyTextArea = new JTextArea(10, 60);
         historyTextArea.setLineWrap(false);
@@ -182,12 +241,6 @@ public class Main extends JFrame implements ActionListener{
         scroll.setVerticalScrollBarPolicy( ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS );
         
         historyPanel.add(scroll);
-        
-        historyLabelPanel = new JPanel();
-        frame.getContentPane().add(historyLabelPanel, BorderLayout.CENTER);
-        
-        historyLabel = new JLabel("History:");
-        historyLabelPanel.add(historyLabel);
         
         frame.pack();
         frame.setVisible( true );
@@ -244,11 +297,19 @@ public class Main extends JFrame implements ActionListener{
                 meanOfRegionFrame.make();
                 
         } else if (e.getSource() == saveAsSubmenu){
-
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle( "Save As" );
+            int chosen = fileChooser.showSaveDialog( null );
+            if(chosen == JFileChooser.APPROVE_OPTION){
+                ImageConverter converter = new ImageConverter(image);
+                converter.saveAsBMP(fileChooser.getSelectedFile());
+            }
+            
         } else if (e.getSource() == rotateRightSubmenu){
         	
         	try {
-                image = imageEditor.rotateRight();
+        	    //imageEditor.addPropertyChangeListener(this);
+                image = imageEditor.rotateRight((Component) e.getSource());
                 HeightLabel.setText( "Height: "+image.getHeight() + " pixels");
                 WidthLabel.setText( "Width: "+image.getWidth() + " pixels");
             } catch (IOException e1) {
@@ -295,6 +356,13 @@ public class Main extends JFrame implements ActionListener{
     
     public static void editHistory(String text){
        historyTextArea.append(filename + " -- "+text+"\n"); 
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+
+        // TODO Auto-generated method stub
+        
     }
 
 }

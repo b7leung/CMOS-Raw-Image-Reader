@@ -1,8 +1,13 @@
 package rawReader;
 
+import java.awt.Component;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 
-public class EditPictureUtils {
+import javax.swing.ProgressMonitor;
+
+public class EditPictureUtils implements PropertyChangeListener{
 	
 	ProcessRaw image;
 	private static final String ROTATE_RIGHT_MESSAGE = "Rotated image right.";
@@ -14,10 +19,29 @@ public class EditPictureUtils {
 		this.image = image;
 	}
 	
-	public ProcessRaw rotateRight() throws IOException{
-	    int temp = image.getHeight();
-	    image.setHeight( image.getWidth() );
-	    image.setWidth( temp );
+	public ProcessRaw rotateRight(Component parentComponent) throws IOException{
+	    
+	    ProgressMonitor progressMonitor = new ProgressMonitor(parentComponent, "Applying Transformation...", "", 0, 100 );
+	    progressMonitor.setProgress( 0 );
+	    //this.addPropertyChangeListener(this);
+	    int x,y;
+	    int[] pixelValueBuffer = new int[image.getHeight()*image.getWidth()];
+	    int bufferIndex = 0;
+	    for(x=0; x< image.getWidth(); x++){
+	        for(y=image.getHeight()-1; y>= 0; y--){
+	           pixelValueBuffer[bufferIndex] = image.getPixelValue( x, y ); 
+	           bufferIndex++;
+	        }
+	    }
+	    bufferIndex = 0;
+	    for(y=0; y<image.getHeight(); y++){
+	        for(x=0; x<image.getWidth(); x++){
+	            image.setPixelValue( x, y, pixelValueBuffer[bufferIndex++] );
+	        }
+	    }
+	       int temp = image.getHeight();
+	        image.setHeight( image.getWidth() );
+	        image.setWidth( temp );
 		Main.editHistory( ROTATE_RIGHT_MESSAGE );
 		return image;
 	}
@@ -66,4 +90,11 @@ public class EditPictureUtils {
 		Main.editHistory( FLIP_VERTICALLY_MESSAGE );
 		return image;
 	}
+
+    @Override
+    public void propertyChange(PropertyChangeEvent arg0) {
+
+        // TODO Auto-generated method stub
+        
+    }
 }
