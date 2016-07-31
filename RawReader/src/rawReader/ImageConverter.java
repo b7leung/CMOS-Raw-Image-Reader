@@ -5,9 +5,9 @@ import java.nio.file.Path;
 
 public class ImageConverter {
     
-    ProcessRaw image;
+    RawImage image;
 
-    public ImageConverter(ProcessRaw image){
+    public ImageConverter(RawImage image){
        this.image = image; 
     }
     

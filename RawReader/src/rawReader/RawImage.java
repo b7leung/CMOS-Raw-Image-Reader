@@ -8,7 +8,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-public class ProcessRaw {
+public class RawImage {
     
     private final static int PIXEL_BUFFER_SIZE = 4;
     private final static int PIXEL_VALUE_SIZE = 2;
@@ -16,11 +16,12 @@ public class ProcessRaw {
     private int height;
     private int width;
     private ArrayList<Integer> pixelData;
+    private String filename;
     
     private RandomAccessFile reader;
     
-    // open image, find length & width, and fill pixel data array.
-    public ProcessRaw(File image) throws IOException{
+    // open image, find length & width
+    public RawImage(File image) throws IOException{
         try {
             reader = new RandomAccessFile(image, "rw");
             byte[] byteWidth = new byte[PIXEL_BUFFER_SIZE];
@@ -30,6 +31,7 @@ public class ProcessRaw {
 
             this.width = byteArrayToInt( byteWidth  );
             this.height= byteArrayToInt( byteLength );
+            filename = image.getName();
         } catch (FileNotFoundException e) {
         	throw new FileNotFoundException();
         }
@@ -82,6 +84,9 @@ public class ProcessRaw {
         return width;
     }
     
+    public String getFilename(){
+    	return filename;
+    }
 
 
 }

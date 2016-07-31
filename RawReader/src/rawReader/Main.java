@@ -34,12 +34,16 @@ import java.awt.Component;
 import javax.swing.BoxLayout;
 import java.awt.GridLayout;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+
 import java.awt.FlowLayout;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import java.awt.Font;
 import javax.swing.KeyStroke;
+import javax.swing.ProgressMonitor;
+
 import java.awt.event.InputEvent;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JSeparator;
@@ -56,10 +60,9 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
     private File rawFile;
     private int xPixel;
     private int yPixel;
-    private ProcessRaw image;
+    private static RawImage image;
     private boolean fileChosen = false;
     private EditPictureUtils imageEditor;
-    private static String filename;
 
     // Menu Bar elements
     private final JMenuBar menuBar;
@@ -79,8 +82,8 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
     // GUI Elements
     private final JFrame frame;
     private final JLabel FileNameLabel;
-    private final JLabel HeightLabel;
-    private final JLabel WidthLabel;
+    private static JLabel HeightLabel;
+    private static JLabel WidthLabel;
     private final JPanel historyPanel;
     private static JTextArea historyTextArea;
     private JMenuItem undoSubmenu;
@@ -89,7 +92,10 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
     private JCheckBoxMenuItem verboseHistoryCheckbox;
     private JLabel lblHistory;
     private JSeparator separator;
-
+    private ProgressMonitor progressMonitor;
+    
+    static HistoryManager historyManager;
+    
     public Main(){
     	
         // setting up GUI window
@@ -243,6 +249,7 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
         historyPanel.add(scroll);
         
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible( true );
     }
     
@@ -267,16 +274,15 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
                     	// if the file is valid, then name/height/width values are initialized
                         rawFile = fileChooser.getSelectedFile();
                         fileChosen = true;
-                        image = new ProcessRaw( rawFile );
-                        filename = new String(rawFile.getName());
-                        FileNameLabel.setText( "File Name: " + rawFile.getName());
+                        image = new RawImage( rawFile );
+                        historyManager = new HistoryManager(image, historyTextArea);
+                        FileNameLabel.setText( "File Name: " + image.getFilename());
                         HeightLabel.setText( "Height: "+image.getHeight() + " pixels");
                         WidthLabel.setText( "Width: "+image.getWidth() + " pixels");
                         for(int i = 0; i < fileDependent.size(); i++){
                         	fileDependent.get(i).setEnabled(true);
                         }
-                        imageEditor = new EditPictureUtils(image);
-                        editHistory("Added image.");
+                        //editHistory("Added image.");
                     }else{
                         throw new IllegalArgumentException();
                     }
@@ -297,6 +303,7 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
                 meanOfRegionFrame.make();
                 
         } else if (e.getSource() == saveAsSubmenu){
+        	
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setDialogTitle( "Save As" );
             int chosen = fileChooser.showSaveDialog( null );
@@ -308,23 +315,27 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
         } else if (e.getSource() == rotateRightSubmenu){
         	
         	try {
-        	    //imageEditor.addPropertyChangeListener(this);
-                image = imageEditor.rotateRight((Component) e.getSource());
-                HeightLabel.setText( "Height: "+image.getHeight() + " pixels");
-                WidthLabel.setText( "Width: "+image.getWidth() + " pixels");
-            } catch (IOException e1) {
+        		progressMonitor = new ProgressMonitor(Main.this, "Applying Transformation...", "", 0, 100 );
+        		progressMonitor.setMillisToDecideToPopup(0);
+        		progressMonitor.setProgress(0);
+        		EditPictureUtils.rotateRight imageEditor = new EditPictureUtils(image).new rotateRight();
+        	    imageEditor.addPropertyChangeListener(this);
+        	    imageEditor.execute();
+        	} catch (Exception e1) {
                 JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR,
                 "Error", JOptionPane.PLAIN_MESSAGE);
-
             }
         	
         } else if (e.getSource() == rotateLeftSubmenu){
             
             try{
-                image = imageEditor.rotateLeft();
-                HeightLabel.setText( "Height: "+image.getHeight() + " pixels");
-                WidthLabel.setText( "Width: "+image.getWidth() + " pixels");
-            }catch(IOException e1){
+            	progressMonitor = new ProgressMonitor(Main.this, "Applying Transformation...", "", 0, 100);
+            	progressMonitor.setMillisToDecideToPopup(0);
+            	progressMonitor.setProgress(0);
+            	EditPictureUtils.rotateLeft imageEditor = new EditPictureUtils(image).new rotateLeft();
+            	imageEditor.addPropertyChangeListener(this);
+            	imageEditor.execute();
+            }catch(Exception e1){
                 JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR,
                 "Error", JOptionPane.PLAIN_MESSAGE);
             }
@@ -333,6 +344,7 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
         } else if (e.getSource() == flipHorizontallySubmenu){
         	
         	try {
+        		imageEditor = new EditPictureUtils(image);
                 image = imageEditor.flipHorizontally();
             } catch (IOException e1) {
                 JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR,
@@ -342,6 +354,7 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
         } else if (e.getSource() == flipVerticallySubmenu){
         	
         	try{
+        		imageEditor = new EditPictureUtils(image);
         		image = imageEditor.flipVertically();
         	}catch(Exception exception){
                 JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR,
@@ -351,18 +364,33 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
     }
     
     public static void main(String args[]){
-        Main gui = new Main();
+    	SwingUtilities.invokeLater(
+    		new Runnable(){
+    			@Override
+    			public void run(){
+    				Main gui = new Main();
+    			}
+    		}
+    	);
     }
     
-    public static void editHistory(String text){
-       historyTextArea.append(filename + " -- "+text+"\n"); 
+    public static void editHistory(HistoryItem historyData){
+    	historyManager.log(historyData);
     }
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-
-        // TODO Auto-generated method stub
-        
+    	if(evt.getPropertyName().equals("progress")){
+    		int progress = ((Integer)evt.getNewValue()).intValue();
+    		progressMonitor.setProgress(progress);
+    	}
+    }
+    
+    public static void updateImage(RawImage updatedImage){
+    	image = updatedImage;
+        HeightLabel.setText( "Height: "+image.getHeight() + " pixels");
+        WidthLabel.setText( "Width: "+image.getWidth() + " pixels");
+    	
     }
 
 }

@@ -22,21 +22,18 @@ public class PixelValueEditor implements ActionListener{
     private JButton changeButton;
     private int xPixel;
     private int yPixel;
-    private ProcessRaw image;
+    private RawImage image;
     private JLabel PixelValueLabel;
     private JFrame PixelValueEditorFrame;
     private JTextField pixelValueField;
     private static final int MAX_PIXEL_INTENSITY = (int) Math.pow(2,10);
     
-    public PixelValueEditor(ProcessRaw image){
+    public PixelValueEditor(RawImage image){
         this.image = image;
     }
 
     // Creates GUI elements for editor window 
-
-    /**
-     * @wbp.parser.entryPoint
-     */
+    
     public void make(){
     	
         PixelValueEditorFrame = new JFrame("Pixel Value Editor");
@@ -126,7 +123,7 @@ public class PixelValueEditor implements ActionListener{
 					oldValue = image.getPixelValue( xPixel, yPixel );
 					int newValue = Integer.parseInt( pixelValueField.getText());
 					image.setPixelValue( xPixel, yPixel, newValue );
-					Main.editHistory( "Changed pixel value at ( " + xPixel + ", "+ yPixel + " )"+ " from "+oldValue + " to " + newValue +"." );
+					//Main.editHistory( "Changed pixel value at ( " + xPixel + ", "+ yPixel + " )"+ " from "+oldValue + " to " + newValue +"." );
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();

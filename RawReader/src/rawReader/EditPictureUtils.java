@@ -4,57 +4,134 @@ import java.awt.Component;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.util.Random;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.ProgressMonitor;
+import javax.swing.SwingWorker;
 
-public class EditPictureUtils implements PropertyChangeListener{
+public class EditPictureUtils{
 	
-	ProcessRaw image;
+	private RawImage image;
 	private static final String ROTATE_RIGHT_MESSAGE = "Rotated image right.";
 	private static final String ROTATE_LEFT_MESSAGE = "Rotated image left.";
 	private static final String FLIP_HORIZONTALLY_MESSAGE = "Flipped image horizontally.";
 	private static final String FLIP_VERTICALLY_MESSAGE = "Flipped image vertically.";
 
-	public EditPictureUtils(ProcessRaw image){
+	public EditPictureUtils(RawImage image){
 		this.image = image;
 	}
 	
-	public ProcessRaw rotateRight(Component parentComponent) throws IOException{
-	    
-	    ProgressMonitor progressMonitor = new ProgressMonitor(parentComponent, "Applying Transformation...", "", 0, 100 );
-	    progressMonitor.setProgress( 0 );
-	    //this.addPropertyChangeListener(this);
-	    int x,y;
-	    int[] pixelValueBuffer = new int[image.getHeight()*image.getWidth()];
-	    int bufferIndex = 0;
-	    for(x=0; x< image.getWidth(); x++){
-	        for(y=image.getHeight()-1; y>= 0; y--){
-	           pixelValueBuffer[bufferIndex] = image.getPixelValue( x, y ); 
-	           bufferIndex++;
-	        }
-	    }
-	    bufferIndex = 0;
-	    for(y=0; y<image.getHeight(); y++){
-	        for(x=0; x<image.getWidth(); x++){
-	            image.setPixelValue( x, y, pixelValueBuffer[bufferIndex++] );
-	        }
-	    }
-	       int temp = image.getHeight();
-	        image.setHeight( image.getWidth() );
-	        image.setWidth( temp );
-		Main.editHistory( ROTATE_RIGHT_MESSAGE );
-		return image;
+	class rotateRight extends SwingWorker<RawImage,String>{
+		
+		// rotates image right
+		@Override
+		protected RawImage doInBackground() throws IOException {
+			int progress = 0;
+			setProgress(progress);
+			
+		    int x,y;
+		    int[] pixelValueBuffer = new int[image.getHeight()*image.getWidth()];
+		    int bufferIndex = 0;
+		    
+		    for(x=0; x< image.getWidth(); x++){
+		        for(y=image.getHeight()-1; y>= 0; y--){
+		           pixelValueBuffer[bufferIndex++] = image.getPixelValue( x, y ); 
+		           //bufferIndex++;
+		        }
+		        progress = (int)( ((double)x) / ((double)image.getWidth()) * 50 );
+		        setProgress(progress);
+		    }
+		    
+		    bufferIndex = 0;
+		    
+		    for(y=0; y<image.getHeight(); y++){
+		        for(x=0; x<image.getWidth(); x++){
+		            image.setPixelValue( x, y, pixelValueBuffer[bufferIndex++] );
+		        }
+		        progress = 50 + (int)( ((double)y)/((double)image.getHeight())*50 );
+		        setProgress(progress);
+		    }
+		    
+		    int temp = image.getHeight();
+		    image.setHeight( image.getWidth() );
+		    image.setWidth( temp );
+		    setProgress(100);
+		    
+			//Main.historyManager.log( new HistoryItem( HistoryItem.ROTATE_RIGHT, ROTATE_RIGHT_MESSAGE ) );
+			Main.editHistory( new HistoryItem( HistoryItem.ROTATE_RIGHT, ROTATE_RIGHT_MESSAGE ) );
+			return image;
+		}
+
+		@Override 
+		protected void done(){
+			try {
+				Main.updateImage(get());
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 	
-	public ProcessRaw rotateLeft() throws IOException{
-	    int temp = image.getHeight();
-	    image.setHeight( image.getWidth() );
-	    image.setWidth( temp );
-		Main.editHistory( ROTATE_LEFT_MESSAGE );
-		return image;
+	// rotates image left
+	public class rotateLeft extends SwingWorker<RawImage, String>{
+
+		@Override
+		protected RawImage doInBackground() throws Exception {
+			
+			int progress = 0;
+			setProgress(progress);
+			int x,y;
+			int[] pixelValueBuffer = new int[image.getHeight()*image.getWidth()];
+			int bufferIndex = 0;
+			
+			for(x = image.getWidth() -1; x>=0; x--){
+				for(y=0; y<image.getHeight(); y++){
+					pixelValueBuffer[bufferIndex++] = image.getPixelValue(x, y);
+					//bufferIndex++;
+				}
+				progress = (int) ( ((double)image.getWidth()-x) / ((double)image.getWidth()) * 50 );
+				setProgress(progress);
+			}
+			
+			bufferIndex = 0;
+			
+			for(y=0; y<image.getHeight(); y++){
+				for(x=0; x<image.getWidth(); x++){
+					image.setPixelValue(x, y, pixelValueBuffer[bufferIndex++]);
+				}
+				progress = 50 + (int) (((double)y)/((double)image.getHeight())*50);
+				setProgress(progress);
+			}
+			
+			int temp = image.getHeight();
+		    image.setHeight( image.getWidth() );
+		    image.setWidth( temp );
+		    setProgress(100);
+
+			//Main.editHistory( ROTATE_LEFT_MESSAGE );
+			return image;
+		}
+		
+		@Override
+		protected void done(){
+			try {
+				Main.updateImage(get());
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
-	
-	public ProcessRaw flipHorizontally() throws IOException{
+
+	public RawImage flipHorizontally() throws IOException{
 	    int buffer;
 	    for(int x = 0; x < image.getWidth(); x++){
 	        for(int y = 0; y < (image.getHeight()/2); y++){
@@ -64,37 +141,21 @@ public class EditPictureUtils implements PropertyChangeListener{
 	            
 	        }
 	    }
-		Main.editHistory( FLIP_HORIZONTALLY_MESSAGE );
+		//Main.editHistory( FLIP_HORIZONTALLY_MESSAGE );
 		return image;
 	}
 	
-	public ProcessRaw flipVertically() throws IOException{
+	public RawImage flipVertically() throws IOException{
 		int buffer;
-		//int temp;
 		for(int y = 0; y<image.getHeight(); y++){
 			for(int x = 0; x<(image.getWidth()/2); x++){
 				buffer = image.getPixelValue(x, y);
-			    //System.out.println( "BEFORE: ( "+ x + ", "+y+" ) = "+ image.getPixelValue( x, y ) + " ---- ( "+ (image.getWidth()-x-1)+", "+ y +") = " + image.getPixelValue( image.getWidth()-x-1, y ));
-				//temp = image.getPixelValue( image.getWidth()-x-1, y );
 				image.setPixelValue( x, y, image.getPixelValue(image.getWidth()-x -1, y) );
 				image.setPixelValue( image.getWidth()-x -1, y, buffer );
-				/*
-				system.out.println("first: "+buffer + " location: ( " + x + ", "+ y + " )"+
-				" ___ switched with: "+temp + " location: ( "+(image.getwidth()-x -1)+ ", "+ y + " )");
-				
-			    system.out.println( "after: ( "+ x + ", "+y+" ) = "+ image.getpixelvalue( x, y ) + " ---- ( "+ (image.getwidth()-x-1)+", "+ y +") = " + image.getpixelvalue( image.getwidth()-x-1, y ));
-			    system.out.println(  );
-			    */
 			}
 		}	
-		Main.editHistory( FLIP_VERTICALLY_MESSAGE );
+		//Main.editHistory( FLIP_VERTICALLY_MESSAGE );
 		return image;
 	}
 
-    @Override
-    public void propertyChange(PropertyChangeEvent arg0) {
-
-        // TODO Auto-generated method stub
-        
-    }
 }

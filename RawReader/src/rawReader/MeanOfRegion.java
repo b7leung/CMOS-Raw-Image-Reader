@@ -23,10 +23,10 @@ public class MeanOfRegion implements ActionListener{
     private JTextField lowerRightXField;
     private JTextField lowerRightYField;
     private JButton findMeanButton;
-    private ProcessRaw image;
+    private RawImage image;
     private JLabel meanResultLabel;
     
-    public MeanOfRegion(ProcessRaw image){
+    public MeanOfRegion(RawImage image){
         this.image = image;
     }
     
