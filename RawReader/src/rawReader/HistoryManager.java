@@ -12,8 +12,10 @@ public class HistoryManager {
 	int currentPos = -1;
 	// position of last action
 	JTextArea historyTextArea;
+	Main guiHandler;
 	
-	public HistoryManager(RawImage image, JTextArea historyTextArea ){
+	public HistoryManager(Main guiHandler, RawImage image, JTextArea historyTextArea ){
+		this.guiHandler = guiHandler;
 		this.image = image;
 		this.historyTextArea = historyTextArea;
 	}
@@ -27,15 +29,18 @@ public class HistoryManager {
 			currentPos++;
 		}else{
 			currentPos++;
-			for(int i = currentPos + 1; i<amt; i++){
+			for(int i = amt - 1; i>currentPos; i--){
+			//for(int i = currentPos + 1; i<amt; i++){
 				actionHistory.remove(i);
+				//historyTextArea.append(  );
 			}
 		}
 	}
 	public void undo(){
-		HistoryItem previousAction = actionHistory.get(--currentPos);
+		HistoryItem previousAction = actionHistory.get(currentPos--);
 		if(previousAction.actionType == previousAction.ROTATE_RIGHT){
-			//EditPictureUtils editor = new Ed;
+			System.out.println("rotate left");
+			guiHandler.rotateLeft();
 		}
 		
 	}
@@ -44,11 +49,17 @@ public class HistoryManager {
 		HistoryItem nextAction = actionHistory.get(++currentPos);
 	}
 	
+	public int getAmt(){
+		return amt;
+	}
+	
+	public int getCurrentPos(){
+		return currentPos;
+	}
+	
 	private void parseAction(HistoryItem action){
 		
 	}
 	
-	public void undoRotateRight(){
-		
-	}
+
 }

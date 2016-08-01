@@ -48,19 +48,19 @@ import java.awt.event.InputEvent;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JSeparator;
 
-public class Main extends JFrame implements ActionListener, PropertyChangeListener{
-    
-	// constant string messages
-    private static final String UNOPENED_FILE_ERROR = new String("A .raw file must be opened first, under File > Open.");
-    private static final String INVALID_FILE_ERROR = new String("Invalid .raw file. "
-    		+ "Check that file is a .raw file, permissions to read/write are granted, and that no other processes are accessing the file.");
-    private static final String TRANSFORMATION_ERROR = new String("Could not perform requested transformation.");
-    
+public class Main extends JFrame implements ActionListener, PropertyChangeListener {
+
+    // constant string messages
+    private static final String UNOPENED_FILE_ERROR = new String( "A .raw file must be opened first, under File > Open." );
+    private static final String INVALID_FILE_ERROR = new String(
+    "Invalid .raw file. " + "Check that file is a .raw file, permissions to read/write are granted, and that no other processes are accessing the file." );
+    private static final String TRANSFORMATION_ERROR = new String( "Could not perform requested transformation." );
+
     // elements relating to the image chosen
     private File rawFile;
     private int xPixel;
     private int yPixel;
-    private static RawImage image;
+    private RawImage image;
     private boolean fileChosen = false;
     private EditPictureUtils imageEditor;
 
@@ -78,14 +78,14 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
     private final JMenuItem flipHorizontallySubmenu;
     private final JMenu editMenu;
     private ArrayList<JMenuItem> fileDependent = new ArrayList<JMenuItem>();
-    
+
     // GUI Elements
     private final JFrame frame;
     private final JLabel FileNameLabel;
-    private static JLabel HeightLabel;
-    private static JLabel WidthLabel;
+    private JLabel HeightLabel;
+    private JLabel WidthLabel;
     private final JPanel historyPanel;
-    private static JTextArea historyTextArea;
+    private JTextArea historyTextArea;
     private JMenuItem undoSubmenu;
     private JMenuItem redoSubmenu;
     private JMenu viewMenu;
@@ -93,310 +93,329 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
     private JLabel lblHistory;
     private JSeparator separator;
     private ProgressMonitor progressMonitor;
-    
+
     static HistoryManager historyManager;
-    
-    public Main(){
-    	
+
+    public Main() {
+
         // setting up GUI window
         try {
-            UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName());
+            UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e1) {
             System.err.println( "Could not set correct GUI parameters. Aborting program." );
             e1.printStackTrace();
             System.exit( 1 );
         }
-        
-        frame = new JFrame(".raw Reader");
-        frame.setSize( 548,370);
+
+        frame = new JFrame( ".raw Reader" );
+        frame.setSize( 548, 370 );
         frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
-        
+
         // configuring menu bar elements
-        menuBar = new JMenuBar();      
-        fileMenu = new JMenu("File");
-        fileMenu.setMnemonic('f');
+        menuBar = new JMenuBar();
+        fileMenu = new JMenu( "File" );
+        fileMenu.setMnemonic( 'f' );
         menuBar.add( fileMenu );
-        
-        openSubmenu = new JMenuItem("Open");
-        openSubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_MASK));
+
+        openSubmenu = new JMenuItem( "Open" );
+        openSubmenu.setAccelerator( KeyStroke.getKeyStroke( KeyEvent.VK_O, InputEvent.CTRL_MASK ) );
         openSubmenu.setMnemonic( 'o' );
         openSubmenu.addActionListener( this );
         fileMenu.add( openSubmenu );
-        
-        saveAsSubmenu = new JMenuItem("Save As Bitmap");
-        saveAsSubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK));
+
+        saveAsSubmenu = new JMenuItem( "Save As Bitmap" );
+        saveAsSubmenu.setAccelerator( KeyStroke.getKeyStroke( KeyEvent.VK_S, InputEvent.CTRL_MASK ) );
         saveAsSubmenu.setMnemonic( 's' );
-        saveAsSubmenu.setEnabled(false);
-        fileDependent.add(saveAsSubmenu);
-        fileMenu.add(saveAsSubmenu);
+        saveAsSubmenu.setEnabled( false );
+        fileDependent.add( saveAsSubmenu );
+        fileMenu.add( saveAsSubmenu );
         saveAsSubmenu.addActionListener( this );
-        
+
         frame.setJMenuBar( menuBar );
-        
-        editMenu = new JMenu("Edit");
-        editMenu.setMnemonic('e');
-        menuBar.add(editMenu);
-        
-        undoSubmenu = new JMenuItem("Undo");
-        undoSubmenu.setEnabled(false);
-        undoSubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_MASK));
-        editMenu.add(undoSubmenu);
-        
-        redoSubmenu = new JMenuItem("Redo");
-        redoSubmenu.setEnabled(false);
-        redoSubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_MASK));
-        editMenu.add(redoSubmenu);
-        
+
+        editMenu = new JMenu( "Edit" );
+        editMenu.setMnemonic( 'e' );
+        menuBar.add( editMenu );
+
+        undoSubmenu = new JMenuItem( "Undo" );
+        undoSubmenu.setEnabled( false );
+        undoSubmenu.setAccelerator( KeyStroke.getKeyStroke( KeyEvent.VK_Z, InputEvent.CTRL_MASK ) );
+        editMenu.add( undoSubmenu );
+        undoSubmenu.addActionListener(this);
+
+        redoSubmenu = new JMenuItem( "Redo" );
+        redoSubmenu.setEnabled( false );
+        redoSubmenu.setAccelerator( KeyStroke.getKeyStroke( KeyEvent.VK_Y, InputEvent.CTRL_MASK ) );
+        editMenu.add( redoSubmenu );
+        redoSubmenu.addActionListener( this );
+
         separator = new JSeparator();
-        editMenu.add(separator);
-        
-        rotateRightSubmenu = new JMenuItem("Rotate Right");
-        rotateRightSubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, InputEvent.CTRL_MASK));
+        editMenu.add( separator );
+
+        rotateRightSubmenu = new JMenuItem( "Rotate Right" );
+        rotateRightSubmenu.setAccelerator( KeyStroke.getKeyStroke( KeyEvent.VK_R, InputEvent.CTRL_MASK ) );
         rotateRightSubmenu.setMnemonic( 'r' );
-        rotateRightSubmenu.setEnabled(false);
-        fileDependent.add(rotateRightSubmenu);
-        editMenu.add(rotateRightSubmenu);
-        rotateRightSubmenu.addActionListener(this);
-        
-        rotateLeftSubmenu = new JMenuItem("Rotate Left");
-        rotateLeftSubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.CTRL_MASK));
+        rotateRightSubmenu.setEnabled( false );
+        fileDependent.add( rotateRightSubmenu );
+        editMenu.add( rotateRightSubmenu );
+        rotateRightSubmenu.addActionListener( this );
+
+        rotateLeftSubmenu = new JMenuItem( "Rotate Left" );
+        rotateLeftSubmenu.setAccelerator( KeyStroke.getKeyStroke( KeyEvent.VK_L, InputEvent.CTRL_MASK ) );
         rotateLeftSubmenu.setMnemonic( 'l' );
-        rotateLeftSubmenu.setEnabled(false);
-        fileDependent.add(rotateLeftSubmenu);
-        editMenu.add(rotateLeftSubmenu);
-        rotateLeftSubmenu.addActionListener(this);
-        
-        flipHorizontallySubmenu = new JMenuItem("Flip Horizontally");
-        flipHorizontallySubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, InputEvent.CTRL_MASK));
+        rotateLeftSubmenu.setEnabled( false );
+        fileDependent.add( rotateLeftSubmenu );
+        editMenu.add( rotateLeftSubmenu );
+        rotateLeftSubmenu.addActionListener( this );
+
+        flipHorizontallySubmenu = new JMenuItem( "Flip Horizontally" );
+        flipHorizontallySubmenu.setAccelerator( KeyStroke.getKeyStroke( KeyEvent.VK_H, InputEvent.CTRL_MASK ) );
         flipHorizontallySubmenu.setMnemonic( 'h' );
-        flipHorizontallySubmenu.setEnabled(false);
-        fileDependent.add(flipHorizontallySubmenu);
-        editMenu.add(flipHorizontallySubmenu);
-        flipHorizontallySubmenu.addActionListener(this);
-        
-        flipVerticallySubmenu = new JMenuItem("Flip Vertically");
-        flipVerticallySubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK));
+        flipHorizontallySubmenu.setEnabled( false );
+        fileDependent.add( flipHorizontallySubmenu );
+        editMenu.add( flipHorizontallySubmenu );
+        flipHorizontallySubmenu.addActionListener( this );
+
+        flipVerticallySubmenu = new JMenuItem( "Flip Vertically" );
+        flipVerticallySubmenu.setAccelerator( KeyStroke.getKeyStroke( KeyEvent.VK_V, InputEvent.CTRL_MASK ) );
         flipVerticallySubmenu.setMnemonic( 'v' );
-        flipVerticallySubmenu.setEnabled(false);
-        fileDependent.add(flipVerticallySubmenu);
-        editMenu.add(flipVerticallySubmenu);
-        
-        viewMenu = new JMenu("View");
-        viewMenu.setMnemonic('v');
-        menuBar.add(viewMenu);
-        
-        verboseHistoryCheckbox = new JCheckBoxMenuItem("Verbose History");
-        verboseHistoryCheckbox.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.ALT_MASK));
+        flipVerticallySubmenu.setEnabled( false );
+        fileDependent.add( flipVerticallySubmenu );
+        editMenu.add( flipVerticallySubmenu );
+
+        viewMenu = new JMenu( "View" );
+        viewMenu.setMnemonic( 'v' );
+        menuBar.add( viewMenu );
+
+        verboseHistoryCheckbox = new JCheckBoxMenuItem( "Verbose History" );
+        verboseHistoryCheckbox.setAccelerator( KeyStroke.getKeyStroke( KeyEvent.VK_V, InputEvent.ALT_MASK ) );
         verboseHistoryCheckbox.setMnemonic( 'v' );
         verboseHistoryCheckbox.setToolTipText( "Verbose mode records all actions. Regular mode records only file changes." );
-        viewMenu.add(verboseHistoryCheckbox);
-        
-        toolsMenu = new JMenu("Tools");
-        toolsMenu.setMnemonic('t');
-        menuBar.add(toolsMenu);
-        
-        regionOfInterestSubmenu = new JMenuItem("Calculate Mean of Region");
-        regionOfInterestSubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, InputEvent.CTRL_MASK));
+        viewMenu.add( verboseHistoryCheckbox );
+
+        toolsMenu = new JMenu( "Tools" );
+        toolsMenu.setMnemonic( 't' );
+        menuBar.add( toolsMenu );
+
+        regionOfInterestSubmenu = new JMenuItem( "Calculate Mean of Region" );
+        regionOfInterestSubmenu.setAccelerator( KeyStroke.getKeyStroke( KeyEvent.VK_M, InputEvent.CTRL_MASK ) );
         regionOfInterestSubmenu.setMnemonic( 'm' );
-        regionOfInterestSubmenu.setEnabled(false);
-        fileDependent.add(regionOfInterestSubmenu);
-        toolsMenu.add(regionOfInterestSubmenu);
+        regionOfInterestSubmenu.setEnabled( false );
+        fileDependent.add( regionOfInterestSubmenu );
+        toolsMenu.add( regionOfInterestSubmenu );
         regionOfInterestSubmenu.addActionListener( this );
-        
-        pixelValueEditorSubmenu = new JMenuItem("Pixel Value Editor");
-        pixelValueEditorSubmenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_MASK));
+
+        pixelValueEditorSubmenu = new JMenuItem( "Pixel Value Editor" );
+        pixelValueEditorSubmenu.setAccelerator( KeyStroke.getKeyStroke( KeyEvent.VK_E, InputEvent.CTRL_MASK ) );
         pixelValueEditorSubmenu.setMnemonic( 'e' );
-        pixelValueEditorSubmenu.setEnabled(false);
-        fileDependent.add(pixelValueEditorSubmenu);
-        toolsMenu.add(pixelValueEditorSubmenu);
+        pixelValueEditorSubmenu.setEnabled( false );
+        fileDependent.add( pixelValueEditorSubmenu );
+        toolsMenu.add( pixelValueEditorSubmenu );
         pixelValueEditorSubmenu.addActionListener( this );
-        flipVerticallySubmenu.addActionListener(this);
-        
-        frame.getContentPane().setLayout(new BorderLayout(0, 0));
-        
+        flipVerticallySubmenu.addActionListener( this );
+
+        frame.getContentPane().setLayout( new BorderLayout( 0, 0 ) );
+
         // creating initial GUI graphic elements
         JPanel imageInfoPane = new JPanel();
-        frame.getContentPane().add(imageInfoPane, BorderLayout.NORTH);
-        imageInfoPane.setLayout(new GridLayout(0, 1, 0, 0));
-        
-        FileNameLabel = new JLabel("File Name:");
-        FileNameLabel.setFont(new Font("Tahoma", Font.PLAIN, 16));
-        imageInfoPane.add(FileNameLabel);
-        
-        HeightLabel = new JLabel("Height: ");
-        HeightLabel.setFont(new Font("Tahoma", Font.PLAIN, 16));
-        imageInfoPane.add(HeightLabel);
-        
-        WidthLabel = new JLabel("Width:");
-        WidthLabel.setFont(new Font("Tahoma", Font.PLAIN, 16));
-        imageInfoPane.add(WidthLabel);
-        
-        lblHistory = new JLabel("History:");
-        lblHistory.setHorizontalAlignment(SwingConstants.CENTER);
-        imageInfoPane.add(lblHistory);
-        
+        frame.getContentPane().add( imageInfoPane, BorderLayout.NORTH );
+        imageInfoPane.setLayout( new GridLayout( 0, 1, 0, 0 ) );
+
+        FileNameLabel = new JLabel( "File Name:" );
+        FileNameLabel.setFont( new Font( "Tahoma", Font.PLAIN, 16 ) );
+        imageInfoPane.add( FileNameLabel );
+
+        HeightLabel = new JLabel( "Height: " );
+        HeightLabel.setFont( new Font( "Tahoma", Font.PLAIN, 16 ) );
+        imageInfoPane.add( HeightLabel );
+
+        WidthLabel = new JLabel( "Width:" );
+        WidthLabel.setFont( new Font( "Tahoma", Font.PLAIN, 16 ) );
+        imageInfoPane.add( WidthLabel );
+
+        lblHistory = new JLabel( "History:" );
+        lblHistory.setHorizontalAlignment( SwingConstants.CENTER );
+        imageInfoPane.add( lblHistory );
+
         historyPanel = new JPanel();
-        frame.getContentPane().add(historyPanel, BorderLayout.CENTER);
-        historyPanel.setLayout(new BorderLayout(0, 0));
-        
-        historyTextArea = new JTextArea(10, 60);
-        historyTextArea.setLineWrap(false);
-        historyTextArea.setEditable(false);
-        JScrollPane scroll = new JScrollPane(historyTextArea);
-        scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+        frame.getContentPane().add( historyPanel, BorderLayout.CENTER );
+        historyPanel.setLayout( new BorderLayout( 0, 0 ) );
+
+        historyTextArea = new JTextArea( 10, 60 );
+        historyTextArea.setLineWrap( false );
+        historyTextArea.setEditable( false );
+        JScrollPane scroll = new JScrollPane( historyTextArea );
+        scroll.setHorizontalScrollBarPolicy( ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS );
         scroll.setVerticalScrollBarPolicy( ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS );
-        
-        historyPanel.add(scroll);
-        
+
+        historyPanel.add( scroll );
+
         frame.pack();
-        frame.setLocationRelativeTo(null);
+        frame.setLocationRelativeTo( null );
         frame.setVisible( true );
     }
-    
-    public void actionPerformed(ActionEvent e){
-        
+
+    public void actionPerformed(ActionEvent e) {
+
         // actions for selecting and opening .raw file
-        if( e.getSource() == openSubmenu ){
-        	
-        	// opening file browser
+        if ( e.getSource() == openSubmenu ) {
+
+            // opening file browser
             JFileChooser fileChooser = new JFileChooser();
-            FileNameExtensionFilter filter = new FileNameExtensionFilter( "RAW files", "raw");
+            FileNameExtensionFilter filter = new FileNameExtensionFilter( "RAW files", "raw" );
             fileChooser.setFileFilter( filter );
-            int fileOpenReturn = fileChooser.showOpenDialog(null);
-            
+            int fileOpenReturn = fileChooser.showOpenDialog( null );
+
             // checking if file chosen was a valid .raw file
-            if(fileOpenReturn == JFileChooser.APPROVE_OPTION){
-                String filenameBuffer = new String(fileChooser.getSelectedFile()+"");
-                try{
-                    String fileExtension = filenameBuffer.substring( filenameBuffer.lastIndexOf( "." ) +1); 
-                    if(fileExtension.equals("raw")){
-                    	
-                    	// if the file is valid, then name/height/width values are initialized
+            if ( fileOpenReturn == JFileChooser.APPROVE_OPTION ) {
+                String filenameBuffer = new String( fileChooser.getSelectedFile() + "" );
+                try {
+                    String fileExtension = filenameBuffer.substring( filenameBuffer.lastIndexOf( "." ) + 1 );
+                    if ( fileExtension.equals( "raw" ) ) {
+
+                        // if the file is valid, then name/height/width values are initialized
                         rawFile = fileChooser.getSelectedFile();
                         fileChosen = true;
                         image = new RawImage( rawFile );
-                        historyManager = new HistoryManager(image, historyTextArea);
-                        FileNameLabel.setText( "File Name: " + image.getFilename());
-                        HeightLabel.setText( "Height: "+image.getHeight() + " pixels");
-                        WidthLabel.setText( "Width: "+image.getWidth() + " pixels");
-                        for(int i = 0; i < fileDependent.size(); i++){
-                        	fileDependent.get(i).setEnabled(true);
+                        historyManager = new HistoryManager( this, image, historyTextArea );
+                        FileNameLabel.setText( "File Name: " + image.getFilename() );
+                        HeightLabel.setText( "Height: " + image.getHeight() + " pixels" );
+                        WidthLabel.setText( "Width: " + image.getWidth() + " pixels" );
+                        for ( int i = 0; i < fileDependent.size(); i++ ) {
+                            fileDependent.get( i ).setEnabled( true );
                         }
-                        //editHistory("Added image.");
-                    }else{
+                        // editHistory("Added image.");
+                    } else {
                         throw new IllegalArgumentException();
                     }
-                }catch(Exception fileNameError){
-                    JOptionPane.showMessageDialog( frame, INVALID_FILE_ERROR,
-                    "Error", JOptionPane.PLAIN_MESSAGE);
+                } catch (Exception fileNameError) {
+                    JOptionPane.showMessageDialog( frame, INVALID_FILE_ERROR, "Error", JOptionPane.PLAIN_MESSAGE );
                 }
             }
-        // actions for opening pixel value editor
-        } else if (e.getSource() == pixelValueEditorSubmenu){
-        	
-                PixelValueEditor pixelEditFrame = new PixelValueEditor(image);
-                pixelEditFrame.make();
-                
-        } else if (e.getSource() == regionOfInterestSubmenu){
-        	
-                MeanOfRegion meanOfRegionFrame = new MeanOfRegion(image);
-                meanOfRegionFrame.make();
-                
-        } else if (e.getSource() == saveAsSubmenu){
-        	
+            // actions for opening pixel value editor
+        } else if ( e.getSource() == pixelValueEditorSubmenu ) {
+
+            PixelValueEditor pixelEditFrame = new PixelValueEditor( image );
+            pixelEditFrame.make();
+
+        } else if ( e.getSource() == regionOfInterestSubmenu ) {
+
+            MeanOfRegion meanOfRegionFrame = new MeanOfRegion( image );
+            meanOfRegionFrame.make();
+
+        } else if ( e.getSource() == saveAsSubmenu ) {
+
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setDialogTitle( "Save As" );
             int chosen = fileChooser.showSaveDialog( null );
-            if(chosen == JFileChooser.APPROVE_OPTION){
-                ImageConverter converter = new ImageConverter(image);
-                converter.saveAsBMP(fileChooser.getSelectedFile());
+            if ( chosen == JFileChooser.APPROVE_OPTION ) {
+                ImageConverter converter = new ImageConverter( image );
+                converter.saveAsBMP( fileChooser.getSelectedFile() );
             }
-            
-        } else if (e.getSource() == rotateRightSubmenu){
-        	
-        	try {
-        		progressMonitor = new ProgressMonitor(Main.this, "Applying Transformation...", "", 0, 100 );
-        		progressMonitor.setMillisToDecideToPopup(0);
-        		progressMonitor.setProgress(0);
-        		EditPictureUtils.rotateRight imageEditor = new EditPictureUtils(image).new rotateRight();
-        	    imageEditor.addPropertyChangeListener(this);
-        	    imageEditor.execute();
-        	} catch (Exception e1) {
-                JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR,
-                "Error", JOptionPane.PLAIN_MESSAGE);
-            }
-        	
-        } else if (e.getSource() == rotateLeftSubmenu){
-            
-            try{
-            	progressMonitor = new ProgressMonitor(Main.this, "Applying Transformation...", "", 0, 100);
-            	progressMonitor.setMillisToDecideToPopup(0);
-            	progressMonitor.setProgress(0);
-            	EditPictureUtils.rotateLeft imageEditor = new EditPictureUtils(image).new rotateLeft();
-            	imageEditor.addPropertyChangeListener(this);
-            	imageEditor.execute();
-            }catch(Exception e1){
-                JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR,
-                "Error", JOptionPane.PLAIN_MESSAGE);
-            }
-        	
-        	
-        } else if (e.getSource() == flipHorizontallySubmenu){
-        	
-        	try {
-        		imageEditor = new EditPictureUtils(image);
+
+        } else if ( e.getSource() == rotateRightSubmenu ) {
+            rotateRight();
+        } else if ( e.getSource() == rotateLeftSubmenu ) {
+            rotateLeft();
+        } else if ( e.getSource() == flipHorizontallySubmenu ) {
+
+            try {
+                imageEditor = new EditPictureUtils( this, image );
                 image = imageEditor.flipHorizontally();
             } catch (IOException e1) {
-                JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR,
-                "Error", JOptionPane.PLAIN_MESSAGE);
+                JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR, "Error", JOptionPane.PLAIN_MESSAGE );
             }
-        	
-        } else if (e.getSource() == flipVerticallySubmenu){
-        	
-        	try{
-        		imageEditor = new EditPictureUtils(image);
-        		image = imageEditor.flipVertically();
-        	}catch(Exception exception){
-                JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR,
-                "Error", JOptionPane.PLAIN_MESSAGE);
-        	}
-        } 
+
+        } else if ( e.getSource() == flipVerticallySubmenu ) {
+
+            try {
+                imageEditor = new EditPictureUtils( this, image );
+                image = imageEditor.flipVertically();
+            } catch (Exception exception) {
+                JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR, "Error", JOptionPane.PLAIN_MESSAGE );
+            }
+        } else if (e.getSource()== undoSubmenu){
+           historyManager.undo(); 
+            updateReUndo();
+        } else if (e.getSource() == redoSubmenu){
+            historyManager.redo();
+            updateReUndo();
+        }
     }
-    
-    public static void main(String args[]){
-    	SwingUtilities.invokeLater(
-    		new Runnable(){
-    			@Override
-    			public void run(){
-    				Main gui = new Main();
-    			}
-    		}
-    	);
+
+    public static void main(String args[]) {
+
+        SwingUtilities.invokeLater( new Runnable() {
+            @Override
+            public void run() {
+
+                Main gui = new Main();
+            }
+        } );
     }
-    
-    public static void editHistory(HistoryItem historyData){
-    	historyManager.log(historyData);
+
+    public void editHistory(HistoryItem historyData) {
+        historyManager.log( historyData );
     }
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-    	if(evt.getPropertyName().equals("progress")){
-    		int progress = ((Integer)evt.getNewValue()).intValue();
-    		progressMonitor.setProgress(progress);
-    	}
+        if ( evt.getPropertyName().equals( "progress" ) ) {
+            int progress = ( (Integer) evt.getNewValue() ).intValue();
+            progressMonitor.setProgress( progress );
+        }
     }
-    
-    public static void updateImage(RawImage updatedImage){
-    	image = updatedImage;
-        HeightLabel.setText( "Height: "+image.getHeight() + " pixels");
-        WidthLabel.setText( "Width: "+image.getWidth() + " pixels");
-    	
+
+    public void updateImage(RawImage updatedImage) {
+
+        image = updatedImage;
+        HeightLabel.setText( "Height: " + image.getHeight() + " pixels" );
+        WidthLabel.setText( "Width: " + image.getWidth() + " pixels" );
+
+    }
+
+    public void updateReUndo() {
+
+        System.out.println( historyManager.getCurrentPos() );
+        if ( historyManager.getCurrentPos() >= 0 ) {
+            undoSubmenu.setEnabled( true );
+        } else {
+            undoSubmenu.setEnabled( false );
+        }
+
+        if ( historyManager.getCurrentPos() < historyManager.getAmt() - 1 ) {
+            redoSubmenu.setEnabled( true );
+        } else {
+            redoSubmenu.setEnabled( false );
+        }
+    }
+
+    public void rotateRight() {
+
+        try {
+            progressMonitor = new ProgressMonitor( Main.this, "Applying Transformation...", "", 0, 100 );
+            progressMonitor.setMillisToDecideToPopup( 0 );
+            progressMonitor.setProgress( 0 );
+            EditPictureUtils.rotateRight imageEditor = new EditPictureUtils( this, image ).new rotateRight();
+            imageEditor.addPropertyChangeListener( this );
+            imageEditor.execute();
+        } catch (Exception e1) {
+            JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR, "Error", JOptionPane.PLAIN_MESSAGE );
+        }
+    }
+
+    public void rotateLeft() {
+
+        try {
+            progressMonitor = new ProgressMonitor( Main.this, "Applying Transformation...", "", 0, 100 );
+            progressMonitor.setMillisToDecideToPopup( 0 );
+            progressMonitor.setProgress( 0 );
+            EditPictureUtils.rotateLeft imageEditor = new EditPictureUtils( this, image ).new rotateLeft();
+            imageEditor.addPropertyChangeListener( this );
+            imageEditor.execute();
+        } catch (Exception e1) {
+            JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR, "Error", JOptionPane.PLAIN_MESSAGE );
+        }
     }
 
 }
-
-
-
-
-
-

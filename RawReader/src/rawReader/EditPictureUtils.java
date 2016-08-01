@@ -13,13 +13,15 @@ import javax.swing.SwingWorker;
 public class EditPictureUtils{
 	
 	private RawImage image;
+	private Main guiHandler;
 	private static final String ROTATE_RIGHT_MESSAGE = "Rotated image right.";
 	private static final String ROTATE_LEFT_MESSAGE = "Rotated image left.";
 	private static final String FLIP_HORIZONTALLY_MESSAGE = "Flipped image horizontally.";
 	private static final String FLIP_VERTICALLY_MESSAGE = "Flipped image vertically.";
 
-	public EditPictureUtils(RawImage image){
+	public EditPictureUtils(Main guiHandler, RawImage image){
 		this.image = image;
+		this.guiHandler = guiHandler;
 	}
 	
 	class rotateRight extends SwingWorker<RawImage,String>{
@@ -59,14 +61,15 @@ public class EditPictureUtils{
 		    setProgress(100);
 		    
 			//Main.historyManager.log( new HistoryItem( HistoryItem.ROTATE_RIGHT, ROTATE_RIGHT_MESSAGE ) );
-			Main.editHistory( new HistoryItem( HistoryItem.ROTATE_RIGHT, ROTATE_RIGHT_MESSAGE ) );
+			guiHandler.editHistory( new HistoryItem( HistoryItem.ROTATE_RIGHT, ROTATE_RIGHT_MESSAGE ) );
 			return image;
 		}
 
 		@Override 
 		protected void done(){
 			try {
-				Main.updateImage(get());
+				guiHandler.updateImage(get());
+				guiHandler.updateReUndo();
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -120,7 +123,7 @@ public class EditPictureUtils{
 		@Override
 		protected void done(){
 			try {
-				Main.updateImage(get());
+				guiHandler.updateImage(get());
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
