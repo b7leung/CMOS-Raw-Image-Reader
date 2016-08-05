@@ -23,13 +23,20 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 
 import javax.swing.BoxLayout;
 import java.awt.GridLayout;
@@ -85,7 +92,7 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
     private JLabel HeightLabel;
     private JLabel WidthLabel;
     private final JPanel historyPanel;
-    private JTextArea historyTextArea;
+    private JTextPane historyTextPane;
     private JMenuItem undoSubmenu;
     private JMenuItem redoSubmenu;
     private JMenu viewMenu;
@@ -238,13 +245,31 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
         imageInfoPane.add( lblHistory );
 
         historyPanel = new JPanel();
+        historyPanel.setPreferredSize( new Dimension(600, 250) );;
         frame.getContentPane().add( historyPanel, BorderLayout.CENTER );
         historyPanel.setLayout( new BorderLayout( 0, 0 ) );
 
-        historyTextArea = new JTextArea( 10, 60 );
-        historyTextArea.setLineWrap( false );
-        historyTextArea.setEditable( false );
-        JScrollPane scroll = new JScrollPane( historyTextArea );
+        //historyTextArea = new JTextArea( 10, 60 );
+        historyTextPane = new JTextPane();
+        historyTextPane.setEditable( false);
+        
+        /*
+        StyledDocument doc = historyTextPane.getStyledDocument();
+        SimpleAttributeSet keyWord = new SimpleAttributeSet();
+        StyleConstants.setForeground( keyWord, Color.RED );
+        StyleConstants.setBold( keyWord, true );
+        try {
+            doc.insertString( 0, "start", null );
+            //doc.insertString( 0, "\nhi", keyWord );
+            doc.insertString( doc.getLength(), "\nhi", keyWord );
+        } catch (BadLocationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+       */ 
+        //historyTextArea.setBounds( 0, 0, 100, 300 );
+        //historyTextArea.setLineWrap( false );
+        JScrollPane scroll = new JScrollPane( historyTextPane);
         scroll.setHorizontalScrollBarPolicy( ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS );
         scroll.setVerticalScrollBarPolicy( ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS );
 
@@ -277,7 +302,7 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
                         rawFile = fileChooser.getSelectedFile();
                         fileChosen = true;
                         image = new RawImage( rawFile );
-                        historyManager = new HistoryManager( this, image, historyTextArea );
+                        historyManager = new HistoryManager( this, image, historyTextPane);
                         FileNameLabel.setText( "File Name: " + image.getFilename() );
                         HeightLabel.setText( "Height: " + image.getHeight() + " pixels" );
                         WidthLabel.setText( "Width: " + image.getWidth() + " pixels" );
@@ -355,7 +380,12 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
     }
 
     public void editHistory(HistoryItem historyData) {
-        historyManager.log( historyData );
+        try {
+            historyManager.log( historyData );
+        } catch (BadLocationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     @Override

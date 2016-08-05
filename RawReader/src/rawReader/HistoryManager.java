@@ -1,28 +1,37 @@
 package rawReader;
 
+import java.awt.Color;
 import java.util.LinkedList;
 
 import javax.swing.JTextArea;
+import javax.swing.JTextPane;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 
 public class HistoryManager {
-	
-	RawImage image;
-	LinkedList<HistoryItem> actionHistory = new LinkedList<HistoryItem>();
-	int amt = 0;
-	int currentPos = -1;
+    
+    private static final Color LAST_ACTION_COLOR = Color.red;
+	private RawImage image;
+	private LinkedList<HistoryItem> actionHistory = new LinkedList<HistoryItem>();
+	private int amt = 0;
+	private int currentPos = -1;
 	// position of last action
-	JTextArea historyTextArea;
-	Main guiHandler;
+	private JTextPane historyTextPane;
+	private Main guiHandler;
 	
-	public HistoryManager(Main guiHandler, RawImage image, JTextArea historyTextArea ){
+
+	public HistoryManager(Main guiHandler, RawImage image, JTextPane historyTextPane ){
 		this.guiHandler = guiHandler;
 		this.image = image;
-		this.historyTextArea = historyTextArea;
+		this.historyTextPane= historyTextPane;
 	}
 	
-	public void log(HistoryItem action){
+	public void log(HistoryItem action) throws BadLocationException{
 		
-		historyTextArea.append(image.getFilename()+ " -- " +action.description+"\n");
+		//historyTextArea.append(image.getFilename()+ " -- " +action.description+"\n");
+	    write(image.getFilename()+ " -- " +action.getDescription(), LAST_ACTION_COLOR, true, false);
 		actionHistory.add(action);
 		if(amt == currentPos+1){
 			amt++;
@@ -38,7 +47,7 @@ public class HistoryManager {
 	}
 	public void undo(){
 		HistoryItem previousAction = actionHistory.get(currentPos--);
-		if(previousAction.actionType == previousAction.ROTATE_RIGHT){
+		if(previousAction.getActionType() == previousAction.ROTATE_RIGHT){
 			System.out.println("rotate left");
 			guiHandler.rotateLeft();
 		}
@@ -59,6 +68,15 @@ public class HistoryManager {
 	
 	private void parseAction(HistoryItem action){
 		
+	}
+	
+	private void write(String text, Color color, boolean bold, boolean italics) throws BadLocationException{
+	    StyledDocument doc = historyTextPane.getStyledDocument();
+	    SimpleAttributeSet attributes = new SimpleAttributeSet();
+	    StyleConstants.setForeground( attributes, color );
+	    StyleConstants.setBold( attributes, bold );
+	    StyleConstants.setItalic( attributes, italics );
+	    doc.insertString( doc.getLength(), text+"\n", attributes );
 	}
 	
 
