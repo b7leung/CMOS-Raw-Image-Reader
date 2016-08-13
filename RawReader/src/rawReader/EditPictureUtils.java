@@ -9,23 +9,27 @@ import java.util.concurrent.ExecutionException;
 
 import javax.swing.ProgressMonitor;
 import javax.swing.SwingWorker;
+import javax.swing.text.BadLocationException;
 
 public class EditPictureUtils{
 	
 	private RawImage image;
 	private Main guiHandler;
-	private static final String ROTATE_RIGHT_MESSAGE = "Rotated image right.";
+	public static final String ROTATE_RIGHT_MESSAGE = "Rotated image right.";
 	private static final String ROTATE_LEFT_MESSAGE = "Rotated image left.";
 	private static final String FLIP_HORIZONTALLY_MESSAGE = "Flipped image horizontally.";
 	private static final String FLIP_VERTICALLY_MESSAGE = "Flipped image vertically.";
+	private HistoryManager historyManager;
 
-	public EditPictureUtils(Main guiHandler, RawImage image){
+	public EditPictureUtils(Main guiHandler, RawImage image, HistoryManager historyManager){
 		this.image = image;
 		this.guiHandler = guiHandler;
+		this.historyManager = historyManager;
 	}
 	
 	class rotateRight extends SwingWorker<RawImage,String>{
-		
+	    
+
 		// rotates image right
 		@Override
 		protected RawImage doInBackground() throws IOException {
@@ -59,9 +63,14 @@ public class EditPictureUtils{
 		    image.setHeight( image.getWidth() );
 		    image.setWidth( temp );
 		    setProgress(100);
-		    
-			//Main.historyManager.log( new HistoryItem( HistoryItem.ROTATE_RIGHT, ROTATE_RIGHT_MESSAGE ) );
-			guiHandler.editHistory( new HistoryItem( HistoryItem.ROTATE_RIGHT, ROTATE_RIGHT_MESSAGE ) );
+		   /* 
+			try {
+                historyManager.log( new HistoryItem( HistoryItem.ROTATE_RIGHT, ROTATE_RIGHT_MESSAGE, false) );
+            } catch (BadLocationException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            */
 			return image;
 		}
 
@@ -69,7 +78,7 @@ public class EditPictureUtils{
 		protected void done(){
 			try {
 				guiHandler.updateImage(get());
-				guiHandler.updateReUndo();
+				//guiHandler.updateReUndo();
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

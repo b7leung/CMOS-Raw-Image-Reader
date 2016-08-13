@@ -42,6 +42,7 @@ import javax.swing.BoxLayout;
 import java.awt.GridLayout;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 
 import java.awt.FlowLayout;
 import javax.swing.JScrollBar;
@@ -55,8 +56,9 @@ import java.awt.event.InputEvent;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JSeparator;
 
-public class Main extends JFrame implements ActionListener, PropertyChangeListener {
+public class Main extends JFrame implements ActionListener{
 
+//public class Main extends JFrame implements ActionListener, PropertyChangeListener {
     // constant string messages
     private static final String UNOPENED_FILE_ERROR = new String( "A .raw file must be opened first, under File > Open." );
     private static final String INVALID_FILE_ERROR = new String(
@@ -102,6 +104,7 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
     private ProgressMonitor progressMonitor;
 
     static HistoryManager historyManager;
+    ImageChanger imageChanger;
 
     public Main() {
 
@@ -303,13 +306,14 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
                         fileChosen = true;
                         image = new RawImage( rawFile );
                         historyManager = new HistoryManager( this, image, historyTextPane);
+                        imageChanger = new ImageChanger(this, image, historyManager);
                         FileNameLabel.setText( "File Name: " + image.getFilename() );
                         HeightLabel.setText( "Height: " + image.getHeight() + " pixels" );
                         WidthLabel.setText( "Width: " + image.getWidth() + " pixels" );
                         for ( int i = 0; i < fileDependent.size(); i++ ) {
                             fileDependent.get( i ).setEnabled( true );
                         }
-                        // editHistory("Added image.");
+                        historyManager.log(new HistoryItem(HistoryItem.SELECT_IMAGE, "Added image.",false));
                     } else {
                         throw new IllegalArgumentException();
                     }
@@ -339,13 +343,14 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
             }
 
         } else if ( e.getSource() == rotateRightSubmenu ) {
-            rotateRight();
+            //rotateRight();
+            imageChanger.apply( HistoryItem.ROTATE_RIGHT, false );
         } else if ( e.getSource() == rotateLeftSubmenu ) {
             rotateLeft();
         } else if ( e.getSource() == flipHorizontallySubmenu ) {
 
             try {
-                imageEditor = new EditPictureUtils( this, image );
+                imageEditor = new EditPictureUtils( this, image, historyManager );
                 image = imageEditor.flipHorizontally();
             } catch (IOException e1) {
                 JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR, "Error", JOptionPane.PLAIN_MESSAGE );
@@ -354,16 +359,26 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
         } else if ( e.getSource() == flipVerticallySubmenu ) {
 
             try {
-                imageEditor = new EditPictureUtils( this, image );
+                imageEditor = new EditPictureUtils( this, image, historyManager );
                 image = imageEditor.flipVertically();
             } catch (Exception exception) {
                 JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR, "Error", JOptionPane.PLAIN_MESSAGE );
             }
         } else if (e.getSource()== undoSubmenu){
-           historyManager.undo(); 
+           try {
+            historyManager.undo();
+        } catch (BadLocationException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        } 
             updateReUndo();
         } else if (e.getSource() == redoSubmenu){
-            historyManager.redo();
+            try {
+                historyManager.redo();
+            } catch (BadLocationException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
             updateReUndo();
         }
     }
@@ -378,24 +393,20 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
             }
         } );
     }
-
-    public void editHistory(HistoryItem historyData) {
-        try {
-            historyManager.log( historyData );
-        } catch (BadLocationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
+/*
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
+        
         if ( evt.getPropertyName().equals( "progress" ) ) {
             int progress = ( (Integer) evt.getNewValue() ).intValue();
             progressMonitor.setProgress( progress );
         }
+        if(evt.getPropertyName().equals( "state" )&& SwingWorker.StateValue.DONE.equals(evt.getNewValue())){
+            System.out.println( "done" );
+        }
+        
     }
-
+*/
     public void updateImage(RawImage updatedImage) {
 
         image = updatedImage;
@@ -405,9 +416,8 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
     }
 
     public void updateReUndo() {
-
-        System.out.println( historyManager.getCurrentPos() );
-        if ( historyManager.getCurrentPos() >= 0 ) {
+        System.out.println( "current pos: " + historyManager.getCurrentPos() + " Total Amt: " + historyManager.getAmt());
+        if ( historyManager.getCurrentPos() > 0 ) {
             undoSubmenu.setEnabled( true );
         } else {
             undoSubmenu.setEnabled( false );
@@ -419,7 +429,7 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
             redoSubmenu.setEnabled( false );
         }
     }
-
+/*
     public void rotateRight() {
 
         try {
@@ -433,16 +443,16 @@ public class Main extends JFrame implements ActionListener, PropertyChangeListen
             JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR, "Error", JOptionPane.PLAIN_MESSAGE );
         }
     }
-
+*/
     public void rotateLeft() {
 
         try {
             progressMonitor = new ProgressMonitor( Main.this, "Applying Transformation...", "", 0, 100 );
             progressMonitor.setMillisToDecideToPopup( 0 );
             progressMonitor.setProgress( 0 );
-            EditPictureUtils.rotateLeft imageEditor = new EditPictureUtils( this, image ).new rotateLeft();
-            imageEditor.addPropertyChangeListener( this );
-            imageEditor.execute();
+            //EditPictureUtils.rotateLeft imageEditor = new EditPictureUtils( this, image ).new rotateLeft();
+            //imageEditor.addPropertyChangeListener( this );
+            //imageEditor.execute();
         } catch (Exception e1) {
             JOptionPane.showMessageDialog( frame, TRANSFORMATION_ERROR, "Error", JOptionPane.PLAIN_MESSAGE );
         }
